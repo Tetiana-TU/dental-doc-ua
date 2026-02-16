@@ -1,0 +1,116 @@
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+body {
+  font-family: Arial, sans-serif;
+  size: 10px;
+  padding: 10px 10px;
+  background-color: #b9c1cc;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+  max-width: 100%;
+}
+
+.pageWrapper {
+  margin: 0 auto;
+}
+/* .summary {
+  margin-top: 20px;
+  font-size: 18px;
+} */
+
+@media print {
+  body,
+  table,
+  th,
+  td,
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  input,
+  select,
+  option {
+    color: black !important;
+  }
+
+  body,
+  table,
+  th,
+  td {
+    background: white !important;
+  }
+
+  body {
+    margin: 0;
+    font-size: 8px;
+    zoom: 0.8;
+  }
+
+  .formHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    font-family: Arial, sans-serif;
+  }
+
+  .controls,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    border: 1px solid black;
+    padding: 3px;
+    text-align: center;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  .vertical {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  td[contenteditable="true"] {
+    outline: none;
+  }
+
+  input::placeholder {
+    color: transparent;
+  }
+
+  select {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: #000;
+    font-size: 16px;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  select::-ms-expand {
+    display: none;
+  }
+}
