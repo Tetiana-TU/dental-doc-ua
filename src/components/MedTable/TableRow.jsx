@@ -3,39 +3,42 @@ import css from "./MedTable.module.css";
 
 export default function TableRow({
   row,
-  index,
   updateCell,
-  deleteRow,
+  rowNumber,
+  onKeyDownCustom,
   diagnosisOptions,
   procedureOptions,
 }) {
+  const handleKeyDown = (e) => {
+    if (onKeyDownCustom) {
+      onKeyDownCustom(e);
+    }
+  };
   return (
     <tr className={css.inputRow}>
-      <td className={css.col1}>
-        <input
-          value={row.col1}
-          onChange={(e) => updateCell(index, "col1", e.target.value)}
-        />
-      </td>
+      <td className={css.col1}>{rowNumber}</td>
 
       <td className={css.col2}>
         <input
-          value={row.col2}
-          onChange={(e) => updateCell(index, "col2", e.target.value)}
+          value={row.col2 || ""}
+          onChange={(e) => updateCell("col2", e.target.value)}
+          onKeyDown={handleKeyDown}
         />
       </td>
 
-      <td className={css.col3}>
+      <td className={css.col3 || ""}>
         <input
           value={row.col3}
-          onChange={(e) => updateCell(index, "col3", e.target.value)}
+          onChange={(e) => updateCell("col3", e.target.value)}
+          onKeyDown={handleKeyDown}
         />
       </td>
 
       <td className={css.col4}>
         <input
           value={row.col4}
-          onChange={(e) => updateCell(index, "col4", e.target.value)}
+          onChange={(e) => updateCell("col4", e.target.value)}
+          onKeyDown={handleKeyDown}
         />
       </td>
 
@@ -43,7 +46,8 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col5}
-          onChange={(e) => updateCell(index, "col5", e.target.value)}
+          onChange={(e) => updateCell("col5", e.target.value)}
+          onKeyDown={handleKeyDown}
         >
           <option value="1">I</option>
           <option value="2">II</option>
@@ -53,7 +57,8 @@ export default function TableRow({
       <td className={css.col6}>
         <input
           value={row.col6}
-          onChange={(e) => updateCell(index, "col6", e.target.value)}
+          onChange={(e) => updateCell("col6", e.target.value)}
+          onKeyDown={handleKeyDown}
         />
       </td>
 
@@ -61,7 +66,8 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col7}
-          onChange={(e) => updateCell(index, "col7", e.target.value)}
+          onChange={(e) => updateCell("col7", e.target.value)}
+          onKeyDown={handleKeyDown}
         >
           <option value="місто">м</option>
           <option value="село">с</option>
@@ -71,7 +77,8 @@ export default function TableRow({
       <td className={css.col8}>
         <input
           value={row.col8}
-          onChange={(e) => updateCell(index, "col8", e.target.value)}
+          onChange={(e) => updateCell("col8", e.target.value)}
+          onKeyDown={handleKeyDown}
         />
       </td>
 
@@ -81,7 +88,8 @@ export default function TableRow({
           <select
             className={css.myList}
             value={row.col9_1}
-            onChange={(e) => updateCell(index, "col9_1", e.target.value)}
+            onChange={(e) => updateCell("col9_1", e.target.value)}
+            onKeyDown={handleKeyDown}
           >
             {diagnosisOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -93,7 +101,7 @@ export default function TableRow({
           <input
             className={css.toothInput}
             value={row.col9_1_tooth}
-            onChange={(e) => updateCell(index, "col9_1_tooth", e.target.value)}
+            onChange={(e) => updateCell("col9_1_tooth", e.target.value)}
             placeholder="№ зуба"
           />
         </div>
@@ -105,7 +113,8 @@ export default function TableRow({
           <select
             className={css.myList}
             value={row.col9_2}
-            onChange={(e) => updateCell(index, "col9_2", e.target.value)}
+            onChange={(e) => updateCell("col9_2", e.target.value)}
+            onKeyDown={handleKeyDown}
           >
             {diagnosisOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -117,7 +126,7 @@ export default function TableRow({
           <input
             className={css.toothInput}
             value={row.col9_2_tooth}
-            onChange={(e) => updateCell(index, "col9_2_tooth", e.target.value)}
+            onChange={(e) => updateCell("col9_2_tooth", e.target.value)}
             placeholder="№ зуба"
           />
         </div>
@@ -129,7 +138,8 @@ export default function TableRow({
           <select
             className={css.myList}
             value={row[`col10_${num}`]}
-            onChange={(e) => updateCell(index, `col10_${num}`, e.target.value)}
+            onChange={(e) => updateCell(`col10_${num}`, e.target.value)}
+            onKeyDown={handleKeyDown}
           >
             {procedureOptions.map((opt, i) => (
               <option key={i} value={opt.value} disabled={opt.disabled}>
@@ -144,7 +154,8 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col11}
-          onChange={(e) => updateCell(index, "col11", e.target.value)}
+          onChange={(e) => updateCell("col11", e.target.value)}
+          onKeyDown={handleKeyDown}
         >
           <option value="value1">Без знеболювання</option>
           <option value="value2">Місцеве</option>
@@ -156,7 +167,8 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col12}
-          onChange={(e) => updateCell(index, "col12", e.target.value)}
+          onChange={(e) => updateCell("col12", e.target.value)}
+          onKeyDown={handleKeyDown}
         >
           <option value="">—</option>
           <option value="San">Сан</option>
@@ -166,7 +178,8 @@ export default function TableRow({
       <td className={css.col13}>
         <input
           value={row.col13}
-          onChange={(e) => updateCell(index, "col13", e.target.value)}
+          onChange={(e) => updateCell("col13", e.target.value)}
+          onKeyDown={handleKeyDown}
         />
       </td>
 

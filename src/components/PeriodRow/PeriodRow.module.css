@@ -11,8 +11,8 @@
   gap: 6px;
   white-space: nowrap;
   font-family: "Times New Roman", serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 400;
   color: #000;
 }
 
@@ -25,8 +25,8 @@
   padding: 0 6px;
   line-height: 1.2;
   cursor: pointer;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 400;
   min-width: 90px;
   text-align: center;
 }
@@ -44,14 +44,15 @@
   justify-content: center;
   color: #000;
 }
-#doctorInput {
+.doctorInput {
   width: 100%;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 400;
   font-family: "Times New Roman", serif;
   padding: 6px 8px;
   border: none;
   border-bottom: 1px solid #000;
+  transition: border-color 0.3s;
   background-color: transparent;
   text-transform: capitalize;
   color: #000;
@@ -60,7 +61,7 @@
   text-align: center;
 }
 
-#doctorInput:focus {
-  border-bottom-color: #007bff;
+.doctorInput:focus {
+  border-bottom: 1px solid #007bff;
   transition: border-color 0.3s;
 }

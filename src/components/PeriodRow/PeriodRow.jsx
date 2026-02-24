@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import css from "./PeriodRow.module.css";
 
-export default function PeriodRow() {
+export default function PeriodRow({ month, year, setMonth, setYear }) {
   const now = new Date();
+  const [doctor, setDoctor] = useState(() => {
+    return localStorage.getItem("doctorName") || "";
+  });
 
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
-  const [doctor, setDoctor] = useState("");
+  useEffect(() => {
+    localStorage.setItem("doctorName", doctor);
+  }, [doctor]);
 
   const months = [
     "січень",
@@ -60,7 +63,7 @@ export default function PeriodRow() {
       <div className={css.periodRight}>
         <input
           type="text"
-          className={css.input}
+          className={css.doctorInput}
           value={doctor}
           onChange={(e) => setDoctor(e.target.value)}
           placeholder="Прізвище, ім'я, по-батькові лікаря"

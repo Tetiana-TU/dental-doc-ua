@@ -3,7 +3,6 @@ import css from "./Form037_0Page.module.css";
 import Controls from "../../../components/Controls/Controls";
 import FormHeader from "../../../components/FormHeader/FormHeader";
 import TitleBlock from "../../../components/TitleBlock/TitleBlock";
-import PeriodRow from "../../../components/PeriodRow/PeriodRow";
 import MedTable from "../../../components/MedTable/MedTable";
 
 function Form037() {
@@ -19,7 +18,6 @@ function Form037() {
     <div className={css.pageWrapper}>
       <FormHeader />
       <TitleBlock />
-      <PeriodRow />
       <MedTable />
       <Controls onOpenSummary={openSummary} onPrint={printPage} />
     </div>

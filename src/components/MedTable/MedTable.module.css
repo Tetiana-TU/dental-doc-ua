@@ -45,31 +45,37 @@ td select {
 .tableBody td {
   box-sizing: border-box;
   vertical-align: middle;
-  padding: 0px 2px; /* 0 зверху і знизу */
-  height: 12px; /* Жорстка висота комірки */
+  padding: 0px 2px;
+  height: 22px;
   line-height: 1;
+  font-size: 12px;
 }
 
-input,
-select {
+input {
   width: 100%;
   box-sizing: border-box;
   border: none;
   background: transparent;
   color: inherit;
   min-width: 0;
-  font-size: 8px;
-}
-.col1 input {
+  font-size: 12px;
   text-align: center;
 }
+
 select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   text-align: center;
-  font-size: 6px;
   padding-left: 2px;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  color: inherit;
+  min-width: 0;
+  font-size: 12px;
+  text-align: center;
 }
 input:focus,
 select:focus {
@@ -191,14 +197,30 @@ tbody td[contenteditable="true"]:focus {
   width: 9%;
 }
 .medTable col:nth-child(14) {
-  width: 5%;
+  width: 2.5%;
 }
 .medTable col:nth-child(15) {
-  width: 5%;
+  width: 2.5%;
 }
 .medTable col:nth-child(16) {
   width: 2.5%;
 }
 .medTable col:nth-child(17) {
   width: 4%;
+}
+.toothInput::placeholder {
+  font-size: 6px;
+}
+.totalRow td {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  text-align: center;
+  color: #000;
+}
+
+.monthTotalRow td {
+  background-color: #d0d0ff;
+  font-weight: bold;
+  text-align: center;
+  color: #000;
 }
