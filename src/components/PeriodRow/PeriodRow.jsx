@@ -34,7 +34,7 @@ export default function PeriodRow({ month, year, setMonth, setYear }) {
   return (
     <div className={css.periodRow}>
       <div className={css.periodLeft}>
-        за{" "}
+        {/* за{" "} */}
         <select
           className={css.select}
           value={month}

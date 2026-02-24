@@ -1,7 +1,10 @@
 h2 {
   text-align: center;
 }
-
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
 table,
 table th,
 table td {
@@ -18,6 +21,9 @@ td {
   white-space: normal;
   word-break: break-word;
 }
+th {
+  font-size: 12px;
+}
 .medTable {
   table-layout: fixed;
   width: 100%;
@@ -27,6 +33,12 @@ td {
   background-color: #555c66;
   color: #ffff;
   font-size: 6px;
+  position: sticky;
+  top: 0;
+  z-index: 2; /* щоб шапка була зверху */
+  text-align: center;
+  border-bottom: 2px solid #999;
+  padding: 8px;
 }
 
 th.vertical {
@@ -46,7 +58,7 @@ td select {
   box-sizing: border-box;
   vertical-align: middle;
   padding: 0px 2px;
-  height: 22px;
+  height: 26px;
   line-height: 1;
   font-size: 12px;
 }
@@ -97,8 +109,7 @@ select:focus {
 .col101 select,
 .col102 select,
 .col103 select,
-.col11 select,
-.col12 select {
+.col11 select {
   text-align: left;
 }
 tbody td[contenteditable="true"] {
@@ -115,6 +126,9 @@ tbody td[contenteditable="true"]:focus {
 .tableBody {
   background-color: #000;
   color: #ffff;
+  overflow-y: auto;
+  padding: 6px;
+  border-bottom: 1px solid #ccc;
 }
 
 .myList {
@@ -146,17 +160,16 @@ tbody td[contenteditable="true"]:focus {
 }
 
 .diagWrap select {
-  flex: 3; /* select займає 3 частини */
+  flex: 3;
   min-width: 0;
 }
 
 .diagWrap .toothInput {
-  flex: 1; /* input займає 1 частину */
+  flex: 1;
   text-align: center;
   min-width: 0;
 }
 
-/* Встановлюємо ширину колонок через nth-child */
 .medTable col:nth-child(1) {
   width: 3%;
 }
@@ -164,37 +177,37 @@ tbody td[contenteditable="true"]:focus {
   width: 6%;
 }
 .medTable col:nth-child(3) {
-  width: 11%;
+  width: 12%;
 }
 .medTable col:nth-child(4) {
   width: 3%;
 }
 .medTable col:nth-child(5) {
-  width: 4%;
+  width: 2.5%;
 }
 .medTable col:nth-child(6) {
   width: 4%;
 }
 .medTable col:nth-child(7) {
-  width: 4%;
+  width: 2.5%;
 }
 .medTable col:nth-child(8) {
   width: 3%;
 }
 .medTable col:nth-child(9) {
-  width: 10%;
+  width: 12%;
 }
 .medTable col:nth-child(10) {
-  width: 10%;
+  width: 12%;
 }
 .medTable col:nth-child(11) {
-  width: 9%;
+  width: 10%;
 }
 .medTable col:nth-child(12) {
-  width: 9%;
+  width: 10%;
 }
 .medTable col:nth-child(13) {
-  width: 9%;
+  width: 10%;
 }
 .medTable col:nth-child(14) {
   width: 2.5%;
@@ -206,10 +219,10 @@ tbody td[contenteditable="true"]:focus {
   width: 2.5%;
 }
 .medTable col:nth-child(17) {
-  width: 4%;
+  width: 2.5%;
 }
 .toothInput::placeholder {
-  font-size: 6px;
+  font-size: 12px;
 }
 .totalRow td {
   background-color: #f0f0f0;

@@ -1,16 +1,18 @@
 .formHeader {
-  display: none;
-}
-/* .formHeader {
+  display: none; /* приховано на екрані */
+  color: black; /* чорний колір тексту */
+  width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* ліво і право по краях */
   align-items: flex-start;
-} */
+  font-family: "Times New Roman", serif;
+}
 
 .left {
+  max-width: 60%;
   display: flex;
   flex-direction: column;
-  max-width: 60%;
+  color: black;
 }
 
 .left > div {
@@ -20,24 +22,31 @@
 .left p {
   margin: 2px 0;
   line-height: 1.3;
+  color: black;
+  font-weight: normal;
 }
 
 .ministry {
   font-weight: bold;
+  color: black;
 }
+
 .fop {
   font-size: 12px;
+  color: black;
 }
 
 .right {
+  max-width: 35%;
   display: flex;
   flex-direction: column;
-  text-align: center;
-  max-width: 35%;
+  text-align: right;
+  color: black;
 }
 
 .right h3 {
   margin: 0;
+  color: black;
 }
 
 .forma p {
@@ -45,11 +54,24 @@
   font-size: 12px;
   line-height: 1.3;
   text-transform: lowercase;
+  color: black;
 }
 
-.forma p h3 {
+.forma h3 {
   display: inline;
   margin: 0;
   font-size: 14px;
   text-transform: uppercase;
+  color: black;
+}
+
+/* Клас, що показує елемент лише при друці */
+.printOnly {
+  display: none;
+}
+
+@media print {
+  .printOnly {
+    display: flex !important;
+  }
 }

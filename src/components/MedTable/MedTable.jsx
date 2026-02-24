@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import css from "./MedTable.module.css";
 import TableRow from "./TableRow";
 import PeriodRow from "../PeriodRow/PeriodRow";
+
 const diagnosisOptions = [
   { value: "", label: "—" },
   { value: "K02_Permanent", label: "K02 Карієс постійні зуби" },
@@ -55,6 +56,9 @@ const procedureOptions = [
   { value: "професійна_гігієна", label: "Професійна гігієна" },
   { value: "ремінералізуюча_терапія", label: "Ремінералізуюча терапія" },
   { value: "герметизація_фісур", label: "Герметизація фісур" },
+  { value: "пломб_корен_кан_1", label: "Пломб.корен.кан.(1)" },
+  { value: "пломб_корен_кан_2", label: "Пломб.корен.кан.(2)" },
+  { value: "пломб_корен_кан_3", label: "Пломб.корен.кан.(3)" },
 
   {
     value: "",
@@ -252,6 +256,7 @@ export default function MedTable() {
         setMonth={setSelectedMonth}
         setYear={setSelectedYear}
       />
+
       <table className={css.medTable}>
         <colgroup>
           {Array.from({ length: 17 }).map((_, index) => (
@@ -262,8 +267,11 @@ export default function MedTable() {
           {/*ПЕРШИЙ РЯДОК ЗАГОЛОВКІВ*/}
           <tr>
             <th rowSpan="2">Номер п/п</th>
-            <th rowSpan="2">Години прийому</th>
-            <th rowSpan="2">Прізвище, ім’я, по батькові пацієнта</th>
+            <th rowSpan="2">Дата</th>
+            <th rowSpan="2">
+              Прізвище, ім’я, по батькові <br />
+              пацієнта
+            </th>
             <th rowSpan="2" className={css.vertical}>
               Кількість повних років
             </th>

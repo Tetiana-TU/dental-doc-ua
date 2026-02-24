@@ -3,7 +3,7 @@ import css from "./FormHeader.module.css";
 
 export default function FormHeader() {
   return (
-    <div className={css.formHeader}>
+    <div className={`${css.formHeader} ${css.printOnly}`}>
       <div className={css.left}>
         <div className={css.MOZ}>
           <p className={css.ministry}>

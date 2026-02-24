@@ -54,14 +54,6 @@ body {
     zoom: 0.8;
   }
 
-  .formHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 20px;
-    font-family: Arial, sans-serif;
-  }
-
   .controls,
   .no-print,
   button {
