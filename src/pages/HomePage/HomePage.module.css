@@ -15,14 +15,21 @@ body {
 }
 
 .heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   color: white;
   margin-left: 20px;
   margin-top: 50px;
 }
 .link {
+  display: inline-block;
   color: white;
   text-decoration: none;
   font-size: 20px;
+}
+.mt {
+  margin-top: 20px;
 }
 .homeTitle {
   margin-bottom: 50px;

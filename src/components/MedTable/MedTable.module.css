@@ -108,8 +108,7 @@ select:focus {
 .col92 select,
 .col101 select,
 .col102 select,
-.col103 select,
-.col11 select {
+.col103 select {
   text-align: left;
 }
 tbody td[contenteditable="true"] {
@@ -195,31 +194,31 @@ tbody td[contenteditable="true"]:focus {
   width: 3%;
 }
 .medTable col:nth-child(9) {
-  width: 12%;
+  width: 11%;
 }
 .medTable col:nth-child(10) {
-  width: 12%;
+  width: 11%;
 }
 .medTable col:nth-child(11) {
-  width: 10%;
+  width: 9%;
 }
 .medTable col:nth-child(12) {
-  width: 10%;
+  width: 9%;
 }
 .medTable col:nth-child(13) {
-  width: 10%;
+  width: 9%;
 }
 .medTable col:nth-child(14) {
   width: 2.5%;
 }
 .medTable col:nth-child(15) {
-  width: 2.5%;
+  width: 3.5%;
 }
 .medTable col:nth-child(16) {
-  width: 2.5%;
+  width: 3.5%;
 }
 .medTable col:nth-child(17) {
-  width: 2.5%;
+  width: 3.5%;
 }
 .toothInput::placeholder {
   font-size: 12px;

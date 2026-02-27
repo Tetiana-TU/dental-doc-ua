@@ -157,9 +157,9 @@ export default function TableRow({
           onChange={(e) => updateCell("col11", e.target.value)}
           onKeyDown={handleKeyDown}
         >
-          <option value="value1">Без знеболювання</option>
-          <option value="value2">Місцеве</option>
-          <option value="value3">Загальне</option>
+          <option value="value1">Без</option>
+          <option value="value2">Місц</option>
+          <option value="value3">Заг</option>
         </select>
       </td>
 

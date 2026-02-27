@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import css from "./Form037_0Page.module.css";
 import Controls from "../../../components/Controls/Controls";
 import FormHeader from "../../../components/FormHeader/FormHeader";
@@ -6,10 +6,11 @@ import TitleBlock from "../../../components/TitleBlock/TitleBlock";
 import MedTable from "../../../components/MedTable/MedTable";
 
 function Form037() {
-  const openSummary = () => {
-    window.open("summary.html", "_blank");
-  };
+  useEffect(() => {
+    document.title = "Форма №037/0";
+  }, []);
 
+  localStorage.setItem("dailyData", JSON.stringify([]));
   const printPage = () => {
     window.print();
   };
@@ -19,7 +20,7 @@ function Form037() {
       <FormHeader />
       <TitleBlock />
       <MedTable />
-      <Controls onOpenSummary={openSummary} onPrint={printPage} />
+      <Controls onPrint={printPage} />
     </div>
   );
 }

@@ -1,0 +1,131 @@
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+.summaryTable,
+.summaryTable th,
+.summaryTable td {
+  border: 1px solid #555;
+  text-align: center;
+  vertical-align: middle;
+  padding: 5px;
+  background: transparent;
+  color: #000;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.formPage {
+  padding: 20px;
+}
+.titleForm39 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #000;
+}
+.summaryTable {
+  width: 100%;
+  margin-bottom: 50px;
+}
+
+.summaryTable col:first-child {
+  width: auto;
+}
+
+.summaryTable td:first-child {
+  white-space: nowrap;
+  width: 1%;
+}
+.summaryTable td:not(:first-child),
+.summaryTable th:not(:first-child) {
+  width: 40px;
+}
+.summaryTable th,
+.summaryTable td {
+  width: 1fr;
+}
+
+.summaryTable th.vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  position: relative;
+  padding: 0;
+  min-height: 200px;
+}
+
+.summaryTable th.vertical span {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.signatureContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 100px;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.column {
+  width: 45%;
+}
+
+.label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.subLabel {
+  font-size: 0.8em;
+  text-align: center;
+  border-top: 1px solid #000;
+  margin-top: 2px;
+}
+
+.dateSection {
+  margin-top: 20px;
+}
+
+.underline {
+  display: inline-block;
+  min-width: 200px;
+  border-bottom: 1px solid #000;
+  height: 20px;
+}
+.totalRow {
+  border-top: 4px double #000;
+}
+.totalRow td {
+  border-top: 4px double black !important;
+}
+
+#summaryBody2 tr:last-child:not(.total-row) td {
+  border-bottom: 1px solid black;
+}
+.separatorRow td {
+  border-bottom: 4px double black;
+}
+@media print {
+  body {
+    background: none;
+  }
+  .controls {
+    display: none !important;
+  }
+  .summaryTable th,
+  .summaryTable td {
+    background: #fff;
+    border: 1px solid #000;
+    color: #000;
+  }
+
+  .newPage {
+    break-before: page;
+    page-break-before: always;
+  }
+}
