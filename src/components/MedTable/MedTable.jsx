@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import css from "./MedTable.module.css";
 import TableRow from "./TableRow";
 import PeriodRow from "../PeriodRow/PeriodRow";
@@ -132,29 +132,54 @@ const procedurePoints = {
   пломб_корен_кан_3: 4,
 };
 const anesthesiaPoints = { value1: 0, value2: 0.5, value3: 1 };
+function getCurrentDate() {
+  const now = new Date();
+  return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1).toString().padStart(2, "0")}.${now.getFullYear()}`;
+}
 
+function createEmptyRow() {
+  return {
+    id: crypto.randomUUID(),
+    col1: "",
+    col2: getCurrentDate(),
+    col3: "",
+    col4: "",
+    col5: "1",
+    col6: "",
+    col7: "місто",
+    col8: "",
+    col9_1: "",
+    col9_1_tooth: "",
+    col9_2: "",
+    col9_2_tooth: "",
+    col10_1: "",
+    col10_2: "",
+    col10_3: "",
+    col11: "value1",
+    col12: "",
+    col13: "",
+    col14: 0,
+  };
+}
 export default function MedTable() {
-  const [city, setCity] = React.useState("місто");
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [rows, setRows] = useState(() => {
+    const saved = localStorage.getItem("dailyData");
     try {
-      const saved = localStorage.getItem("dailyData");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.length ? parsed : [createEmptyRow()];
-      }
-    } catch (error) {
-      console.error("Помилка читання localStorage:", error);
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) && parsed.length
+        ? parsed
+        : [createEmptyRow()];
+    } catch {
+      return [createEmptyRow()];
     }
-    return [createEmptyRow()];
   });
-
-  // Збереження у localStorage при зміні rows
   useEffect(() => {
     localStorage.setItem("dailyData", JSON.stringify(rows));
   }, [rows]);
+
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       if (!row.col2) return true; // col2 - це дата дд.мм.рррр
@@ -170,67 +195,35 @@ export default function MedTable() {
     });
   }, [rows, selectedMonth, selectedYear]);
 
-  // Рахуємо загальну суму УОП (col14)
-  const totalUOP = useMemo(() => {
-    return filteredRows.reduce(
-      (sum, row) => sum + (parseFloat(row.col14) || 0),
-      0,
-    );
-  }, [filteredRows]);
-  function createEmptyRow() {
-    return {
-      id: crypto.randomUUID(),
-      col1: "",
-      col2: getCurrentDate(),
-      col3: "",
-      col4: "",
-      col5: "1",
-      col6: "",
-      col7: "місто",
-      col8: "",
-      col9_1: "",
-      col9_1_tooth: "",
-      col9_2: "",
-      col9_2_tooth: "",
-      col10_1: "",
-      col10_2: "",
-      col10_3: "",
-      col11: "value1",
-      col12: "",
-      col13: "",
-      col14: "",
-    };
-  }
-
-  function getCurrentDate() {
-    const now = new Date();
-    return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1).toString().padStart(2, "0")}.${now.getFullYear()}`;
-  }
-
   const updateCell = (id, key, value) => {
-    setRows((prevRows) =>
-      prevRows.map((r) => {
+    setRows((prevRows) => {
+      const updated = prevRows.map((r) => {
         if (r.id !== id) return r;
-        const updatedRow = {
-          ...r,
-          [key]: value,
-        };
 
-        // якщо змінюються процедури або анестезія — перераховуємо col14
+        const updatedRow = { ...r, [key]: value };
+
+        // оновлення col14
         if (["col10_1", "col10_2", "col10_3", "col11"].includes(key)) {
           const procSum = ["col10_1", "col10_2", "col10_3"].reduce(
             (acc, k) => acc + (procedurePoints[updatedRow[k]] || 0),
             0,
           );
-
           const anesth = anesthesiaPoints[updatedRow.col11] || 0;
-
           updatedRow.col14 = procSum + anesth;
         }
 
         return updatedRow;
-      }),
-    );
+      });
+
+      const lastRow = updated[updated.length - 1];
+
+      // якщо це останній рядок і col3 не порожній — додаємо новий рядок
+      if (id === lastRow.id && key === "col3" && value.trim() !== "") {
+        return [...updated, createEmptyRow()];
+      }
+
+      return updated;
+    });
   };
 
   const deleteRow = (id) => {
@@ -388,21 +381,9 @@ export default function MedTable() {
                 <TableRow
                   key={row.id}
                   row={row}
-                  rowNumber={rowNumber++} // перерахунок порядкового номера
+                  rowNumber={rowNumber++}
                   onKeyDownCustom={(e) => handleGlobalKeyDown(e, row.id)}
-                  updateCell={(key, value) => {
-                    updateCell(row.id, key, value);
-
-                    // перевірка: чи останній рядок у всьому масиві rows
-                    const lastRow = rows[rows.length - 1];
-                    if (
-                      row.id === lastRow.id &&
-                      key === "col3" &&
-                      value.trim() !== ""
-                    ) {
-                      setRows((prev) => [...prev, createEmptyRow()]);
-                    }
-                  }}
+                  updateCell={(key, value) => updateCell(row.id, key, value)}
                   deleteRow={() => deleteRow(row.id)}
                   diagnosisOptions={diagnosisOptions}
                   procedureOptions={procedureOptions}
