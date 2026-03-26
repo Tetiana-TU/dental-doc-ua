@@ -9,9 +9,9 @@ export default function TableRow({
   diagnosisOptions,
   procedureOptions,
 }) {
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e, cellKey) => {
     if (onKeyDownCustom) {
-      onKeyDownCustom(e);
+      onKeyDownCustom(e, cellKey);
     }
   };
   return (
@@ -21,16 +21,20 @@ export default function TableRow({
       <td className={css.col2}>
         <input
           value={row.col2 || ""}
-          onChange={(e) => updateCell("col2", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(e) => updateCell(row.id, "col2", e.target.value)}
+          onKeyDown={(e) => handleKeyDown(e, "col2")}
+          data-row={row.id}
+          data-col="col2"
         />
       </td>
 
-      <td className={css.col3 || ""}>
+      <td className={css.col3}>
         <input
-          value={row.col3}
+          value={row.col3 || ""}
           onChange={(e) => updateCell("col3", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col3")}
+          data-row={row.id}
+          data-col="col3"
         />
       </td>
 
@@ -38,7 +42,9 @@ export default function TableRow({
         <input
           value={row.col4}
           onChange={(e) => updateCell("col4", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col4")}
+          data-row={row.id}
+          data-col="col4"
         />
       </td>
 
@@ -47,7 +53,9 @@ export default function TableRow({
           className={css.myList}
           value={row.col5}
           onChange={(e) => updateCell("col5", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col5")}
+          data-row={row.id}
+          data-col="col5"
         >
           <option value="1">I</option>
           <option value="2">II</option>
@@ -58,7 +66,9 @@ export default function TableRow({
         <input
           value={row.col6}
           onChange={(e) => updateCell("col6", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col6")}
+          data-row={row.id}
+          data-col="col6"
         />
       </td>
 
@@ -67,7 +77,9 @@ export default function TableRow({
           className={css.myList}
           value={row.col7}
           onChange={(e) => updateCell("col7", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col7")}
+          data-row={row.id}
+          data-col="col7"
         >
           <option value="місто">м</option>
           <option value="село">с</option>
@@ -78,7 +90,9 @@ export default function TableRow({
         <input
           value={row.col8}
           onChange={(e) => updateCell("col8", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col8")}
+          data-row={row.id}
+          data-col="col8"
         />
       </td>
 
@@ -89,7 +103,9 @@ export default function TableRow({
             className={css.myList}
             value={row.col9_1}
             onChange={(e) => updateCell("col9_1", e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => handleKeyDown(e, "col9_1")}
+            data-row={row.id}
+            data-col="col9_1"
           >
             {diagnosisOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -102,7 +118,10 @@ export default function TableRow({
             className={css.toothInput}
             value={row.col9_1_tooth}
             onChange={(e) => updateCell("col9_1_tooth", e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e, "col9_1_tooth")}
             placeholder="№ зуба"
+            data-row={row.id}
+            data-col="col9_1_tooth"
           />
         </div>
       </td>
@@ -114,7 +133,9 @@ export default function TableRow({
             className={css.myList}
             value={row.col9_2}
             onChange={(e) => updateCell("col9_2", e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => handleKeyDown(e, "col9_2")}
+            data-row={row.id}
+            data-col="col9_2"
           >
             {diagnosisOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -127,7 +148,10 @@ export default function TableRow({
             className={css.toothInput}
             value={row.col9_2_tooth}
             onChange={(e) => updateCell("col9_2_tooth", e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e, "col9_2_tooth")}
             placeholder="№ зуба"
+            data-row={row.id}
+            data-col="col9_2_tooth"
           />
         </div>
       </td>
@@ -139,7 +163,9 @@ export default function TableRow({
             className={css.myList}
             value={row[`col10_${num}`]}
             onChange={(e) => updateCell(`col10_${num}`, e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => handleKeyDown(e, `col10_${num}`)}
+            data-row={row.id}
+            data-col={`col10_${num}`}
           >
             {procedureOptions.map((opt, i) => (
               <option key={i} value={opt.value} disabled={opt.disabled}>
@@ -155,7 +181,9 @@ export default function TableRow({
           className={css.myList}
           value={row.col11}
           onChange={(e) => updateCell("col11", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col11")}
+          data-row={row.id}
+          data-col="col11"
         >
           <option value="value1">Без</option>
           <option value="value2">Місц</option>
@@ -168,7 +196,9 @@ export default function TableRow({
           className={css.myList}
           value={row.col12}
           onChange={(e) => updateCell("col12", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col12")}
+          data-row={row.id}
+          data-col="col12"
         >
           <option value="">—</option>
           <option value="San">Сан</option>
@@ -179,7 +209,9 @@ export default function TableRow({
         <input
           value={row.col13}
           onChange={(e) => updateCell("col13", e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "col13")}
+          data-row={row.id}
+          data-col="col13"
         />
       </td>
 

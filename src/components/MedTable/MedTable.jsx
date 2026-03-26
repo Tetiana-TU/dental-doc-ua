@@ -161,28 +161,47 @@ function createEmptyRow() {
     col14: 0,
   };
 }
+function saveAllRowsReact(rows, month, year) {
+  const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
+
+  if (!archive[year]) {
+    archive[year] = {};
+  }
+
+  archive[year][month] = rows;
+
+  localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
+  localStorage.setItem("dailyData", JSON.stringify(rows));
+}
 export default function MedTable() {
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [rows, setRows] = useState(() => {
-    const saved = localStorage.getItem("dailyData");
-    try {
-      const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) && parsed.length
-        ? parsed
-        : [createEmptyRow()];
-    } catch {
-      return [createEmptyRow()];
-    }
-  });
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [rows, setRows] = useState([createEmptyRow()]);
   useEffect(() => {
-    localStorage.setItem("dailyData", JSON.stringify(rows));
-  }, [rows]);
+    if (!isLoaded) return;
+
+    saveAllRowsReact(rows, selectedMonth, selectedYear);
+  }, [rows, selectedMonth, selectedYear, isLoaded]);
+
+  useEffect(() => {
+    const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
+
+    const monthData = archive[selectedYear]?.[selectedMonth];
+
+    if (monthData && monthData.length) {
+      setRows(monthData);
+    } else {
+      setRows([createEmptyRow()]);
+    }
+
+    setIsLoaded(true);
+  }, [selectedMonth, selectedYear]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      if (!row.col2) return true; // col2 - це дата дд.мм.рррр
+      if (!row.col2) return true;
       const parts = row.col2.split(".");
       const rowMonth = parseInt(parts[1], 10);
       const rowYear = parseInt(parts[2], 10);
@@ -217,8 +236,7 @@ export default function MedTable() {
 
       const lastRow = updated[updated.length - 1];
 
-      // якщо це останній рядок і col3 не порожній — додаємо новий рядок
-      if (id === lastRow.id && key === "col3" && value.trim() !== "") {
+      if (id === lastRow.id && key === "col3" && (value || "").trim() !== "") {
         return [...updated, createEmptyRow()];
       }
 
@@ -227,19 +245,92 @@ export default function MedTable() {
   };
 
   const deleteRow = (id) => {
-    if (!window.confirm("Ви впевнені, що хочете видалити дані пацієнта?"))
-      return;
-
     // 2. Оновлення стану
     setRows((prevRows) => {
       const updated = prevRows.filter((row) => row.id !== id);
-      return updated.length > 0 ? updated : [createEmptyRow()];
+      const finalRows = updated.length > 0 ? updated : [createEmptyRow()];
+
+      // Зберігаємо одразу після видалення
+      saveAllRowsReact(finalRows, selectedMonth, selectedYear);
+
+      return finalRows;
     });
   };
-  const handleGlobalKeyDown = (e, id) => {
-    if (e.key === "Delete") {
-      deleteRow(id);
+  const rowsToRender = [...filteredRows];
+
+  const hasEmptyLastRow = rowsToRender.some(
+    (r) => !r.col3 || r.col3.trim() === "",
+  );
+
+  if (!hasEmptyLastRow) {
+    rowsToRender.push(createEmptyRow());
+  }
+  // В MedTable.js
+  const handleKeyDown = (e, rowId, cellKey) => {
+    const excludedCells = ["col9_1_tooth", "col9_2_tooth"];
+    if (e.key === "Delete" && !excludedCells.includes(cellKey)) {
+      if (window.confirm("Ви впевнені, що хочете видалити дані пацієнта?")) {
+        deleteRow(rowId);
+      }
+      return; // не продовжувати навігацію
     }
+
+    // Навігація стрілками
+    const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    if (!arrowKeys.includes(e.key)) return;
+
+    e.preventDefault(); // щоб не рухати курсор всередині input
+
+    // Отримуємо індекси рядка і колонки
+    const rowIndex = rows.findIndex((r) => r.id === rowId);
+    const colKeys = [
+      "col1",
+      "col2",
+      "col3",
+      "col4",
+      "col5",
+      "col6",
+      "col7",
+      "col8",
+      "col9_1",
+      "col9_1_tooth",
+      "col9_2",
+      "col9_2_tooth",
+      "col10_1",
+      "col10_2",
+      "col10_3",
+      "col11",
+      "col12",
+      "col13",
+      "col14",
+    ];
+    const cellIndex = colKeys.indexOf(cellKey);
+
+    let nextRowIndex = rowIndex;
+    let nextCellIndex = cellIndex;
+
+    switch (e.key) {
+      case "ArrowUp":
+        nextRowIndex = Math.max(rowIndex - 1, 0);
+        break;
+      case "ArrowDown":
+        nextRowIndex = Math.min(rowIndex + 1, rows.length - 1);
+        break;
+      case "ArrowLeft":
+        nextCellIndex = Math.max(cellIndex - 1, 0);
+        break;
+      case "ArrowRight":
+        nextCellIndex = Math.min(cellIndex + 1, colKeys.length - 1);
+        break;
+    }
+
+    // Фокус на наступній клітинці
+    const nextInput = document.querySelector(
+      `input[data-row="${rows[nextRowIndex].id}"][data-col="${colKeys[nextCellIndex]}"], 
+     select[data-row="${rows[nextRowIndex].id}"][data-col="${colKeys[nextCellIndex]}"]`,
+    );
+
+    if (nextInput) nextInput.focus();
   };
   return (
     <>
@@ -382,7 +473,9 @@ export default function MedTable() {
                   key={row.id}
                   row={row}
                   rowNumber={rowNumber++}
-                  onKeyDownCustom={(e) => handleGlobalKeyDown(e, row.id)}
+                  onKeyDownCustom={(e, cellKey) =>
+                    handleKeyDown(e, row.id, cellKey)
+                  }
                   updateCell={(key, value) => updateCell(row.id, key, value)}
                   deleteRow={() => deleteRow(row.id)}
                   diagnosisOptions={diagnosisOptions}
