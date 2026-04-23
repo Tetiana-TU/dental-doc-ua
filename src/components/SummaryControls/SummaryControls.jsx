@@ -43,7 +43,7 @@ export default function SummaryControls({ buildSummary }) {
   };
 
   return (
-    <div className={css.controls}>
+    <div className={`${css.controls} ${css.noPrint}`}>
       <label>Дата від:</label>
       <input
         type="date"

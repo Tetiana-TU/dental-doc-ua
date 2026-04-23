@@ -22,3 +22,8 @@
 .controls button {
   height: 26px;
 }
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+}

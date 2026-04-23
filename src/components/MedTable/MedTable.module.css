@@ -155,7 +155,8 @@ tbody td[contenteditable="true"]:focus {
 .diagWrap {
   display: flex;
   gap: 4px;
-  min-width: 0;
+  align-items: center;
+  width: 100%;
 }
 
 .diagWrap select {
@@ -163,12 +164,11 @@ tbody td[contenteditable="true"]:focus {
   min-width: 0;
 }
 
-.diagWrap .toothInput {
+.toothInput {
   flex: 1;
+  min-width: 40px; /* щоб не зникав */
   text-align: center;
-  min-width: 0;
 }
-
 .medTable col:nth-child(1) {
   width: 3%;
 }

@@ -8,20 +8,20 @@ function objectToRow1(obj) {
     obj.date, // Дата
     "", // Фактично відпрацьовано годин
     obj.visits, // Кількість відвідувань
-    "", // З них сільських
+    obj.primaryRural, // З них сільських
     `${obj.primaryTotal}/${obj.primaryRural}`, // Кількість первинних
-    "", // З них дітей
-    obj.emergency, // Отримали невідкладну допомогу
-    obj.groupSum, // Запломбовано зубів (сума)
-    obj.cariesPermanent, // карієс постійні
-    "", // карієс тимчасові
-    "", // ускладнений карієс
-    obj.pulpitisPermanent, // пульпіт постійні
-    "", // пульпіт тимчасові
-    obj.periodontitisPermanent, // періодонтит постійні
-    "",
-    "",
-    "",
+    obj.primaryChildren, // З них дітей
+    obj.emergency, // Отримали невідкладну допомогу 7
+    obj.groupSum, // Запломбовано зубів (сума) 8
+    obj.cariesPermanent, // карієс постійні  9
+    obj.cariesPermanentChildren, // 10
+    obj.cariesTemporary, // карієс тимчасові 11
+    obj.pulpitisPermanent, // пульпіт постійні 12
+    obj.pulpitisPermanentChildren, // пульпіт тимчасові
+    obj.periodontitisPermanent, // періодонтит постійні 14
+    obj.periodontitisPermanentChildren, //15
+    obj.pulpitisTemporary,
+    obj.periodontitisTemporary,
     "",
     "",
     "",
@@ -82,31 +82,50 @@ function objectToRow2(obj) {
   ];
 }
 export default function Form039_2_0Page() {
-  const [summary, setSummary] = useState({
-    table1: [],
-    table2: [],
-  });
-
-  useEffect(() => {
-    document.title = "Форма №039-2/0";
-  }, []);
-
+  const [summary, setSummary] = useState({ table1: [], table2: [] });
+  const [startDate, setStartDate] = useState(
+    localStorage.getItem("summaryStartDate") || "",
+  );
+  const [endDate, setEndDate] = useState(
+    localStorage.getItem("summaryEndDate") || "",
+  );
   const handleBuildSummary = useCallback((startDate, endDate) => {
     if (!startDate || !endDate) {
       setSummary({ table1: [], table2: [] });
       return;
     }
-    const rawData = JSON.parse(localStorage.getItem("dailyData")) || [];
+
+    const rawDataMain = JSON.parse(localStorage.getItem("dailyData")) || [];
+    const rawDataArchive =
+      JSON.parse(localStorage.getItem("dailyDataArchive")) || "{}";
+    const year = "2026";
+    const month = "3";
+    const rawDataForPeriod = rawDataArchive[year]?.[month] || [];
+    const filteredArchive = rawDataForPeriod.filter(
+      (row) => !rawDataMain.some((r) => r.date === row.date),
+    );
+    const rawData = [...rawDataMain, ...filteredArchive];
+
+    if (!Array.isArray(rawData)) {
+      setSummary({ table1: [], table2: [] });
+      return;
+    }
+
     const normalizedData = rawData.map((row) => ({
-      2: row.col2, // дата
-      3: row.col3, // ПІБ
-      4: row.col4, // вік
-      5: row.col5, // первинний/вторинний
-      7: row.col7, // село/місто
-      "9-1": row.col9_1, // діагноз 1
-      "9-2": row.col9_2, // діагноз 2
-      11: row.col11, // анестезія
-      14: row.col14, // УОП
+      2: row.col2,
+      3: row.col3,
+      4: row.col4,
+      5: row.col5,
+      7: row.col7,
+      "9-1": row.col9_1,
+      "9-1_tooth": row.col9_1_tooth,
+      "9-2": row.col9_2,
+      "9-2_tooth": row.col9_2_tooth,
+      "10-1": row.col10_1,
+      "10-2": row.col10_2,
+      "10-3": row.col10_3,
+      11: row.col11,
+      14: row.col14,
     }));
 
     const { groupedData, monthTotal } = buildSummary(
@@ -114,25 +133,41 @@ export default function Form039_2_0Page() {
       startDate,
       endDate,
     );
+    function cleanRow(row) {
+      return row.map((cell) => {
+        if (cell === 0 || cell === null || cell === undefined) return "";
+        return cell;
+      });
+    }
+    const table1 = groupedData.map((obj) => cleanRow(objectToRow1(obj)));
+    const table2 = groupedData.map((obj) => cleanRow(objectToRow2(obj)));
 
-    const table1 = groupedData.map(objectToRow1);
-    const table2 = groupedData.map(objectToRow2);
-    // ====== Підсумок за місяць ======
-    const totalRow1 = objectToRow1(monthTotal);
-    totalRow1[0] = "Всього";
-    table1.push(totalRow1);
-
-    const totalRow2 = objectToRow2(monthTotal);
-    table2.push(totalRow2);
+    table1.push(cleanRow(objectToRow1(monthTotal)));
+    table2.push(cleanRow(objectToRow2(monthTotal)));
 
     setSummary({ table1, table2 });
-    localStorage.setItem("dailyDataForma39", JSON.stringify(groupedData));
   }, []);
+
+  useEffect(() => {
+    document.title = "Форма №039-2/0";
+  }, []);
+
+  useEffect(() => {
+    handleBuildSummary(startDate, endDate);
+  }, [startDate, endDate, handleBuildSummary]);
 
   return (
     <div className={css.formPage}>
-      <h3 className={css.titleForm39}>Зведений щоденний облік роботи лікаря</h3>
-      <SummaryControls buildSummary={handleBuildSummary} />
+      <h3 className={`${css.titleForm39} ${css.noPrint}`}>
+        Зведений щоденний облік роботи лікаря
+      </h3>
+      <SummaryControls
+        startDate={startDate}
+        endDate={endDate}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+        buildSummary={handleBuildSummary}
+      />
 
       {/* ====== ПЕРША ТАБЛИЦЯ ====== */}
       <table className={`${css.summaryTable} ${css.part1}`}>
@@ -286,13 +321,17 @@ export default function Form039_2_0Page() {
         </thead>
 
         <tbody>
-          {summary.table1.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((cell, cellIndex) => (
-                <td key={cellIndex}>{cell}</td>
-              ))}
-            </tr>
-          ))}
+          {summary.table1.map((row, rowIndex) => {
+            const isTotal = rowIndex === summary.table1.length - 1;
+
+            return (
+              <tr key={rowIndex} className={isTotal ? css.totalRow : ""}>
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex}>{cell}</td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -426,13 +465,17 @@ export default function Form039_2_0Page() {
           </thead>
 
           <tbody>
-            {summary.table2.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex}>{cell}</td>
-                ))}
-              </tr>
-            ))}
+            {summary.table2.map((row, rowIndex) => {
+              const isTotal = rowIndex === summary.table2.length - 1;
+
+              return (
+                <tr key={rowIndex} className={isTotal ? css.totalRow : ""}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={cellIndex}>{cell}</td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

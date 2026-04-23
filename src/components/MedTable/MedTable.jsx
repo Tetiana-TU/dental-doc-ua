@@ -2,19 +2,91 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import css from "./MedTable.module.css";
 import TableRow from "./TableRow";
 import PeriodRow from "../PeriodRow/PeriodRow";
+import icdData from "./../../data/icd11.json";
 
-const diagnosisOptions = [
-  { value: "", label: "—" },
-  { value: "K02_Permanent", label: "K02 Карієс постійні зуби" },
-  { value: "K02_Temporary", label: "K02 Карієс тимчасові зуби" },
-  { value: "K04.0_Permanent", label: "K04.0 Пульпіт постійні зуби" },
-  { value: "K04.0_Temporary", label: "K04.0 Пульпіт тимчасові зуби" },
-  { value: "K04.4_Permanent", label: "K04.4 Періодонтит постійні зуби" },
-  { value: "K04.4_Temporary", label: "K04.4 Періодонтит тимчасові зуби" },
-  { value: "K05.0", label: "K05.0 Гінгівіт гострий" },
-  { value: "K05.1", label: "K05.1 Гінгівіт хронічний" },
-  { value: "Z01.2", label: "Профілактичний огляд" },
-];
+function DiagnosisTree({
+  data,
+  onSelect,
+  openNodes,
+  toggleNode,
+  selectedCode,
+}) {
+  return data.map((node) => {
+    const isOpen = openNodes?.[node.code];
+    const isSelected = Boolean(node.code) && selectedCode === node.code;
+    return (
+      <div key={node.code ?? node.name}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          {node.children && (
+            <button onClick={() => toggleNode(node.code)}>
+              {isOpen ? "−" : "+"}
+            </button>
+          )}
+
+          <div
+            onClick={() => !node.children && onSelect(node)}
+            style={{
+              cursor: "pointer",
+              paddingLeft: 6,
+              fontWeight: isSelected ? "bold" : "normal",
+              background: isSelected ? "#ffe08a" : "transparent",
+              borderRadius: "4px",
+              padding: "2px 6px",
+              display: "inline-block",
+            }}
+          >
+            {node.code ? `${node.code} - ${node.name}` : node.name}
+          </div>
+        </div>
+
+        {node.children && isOpen && (
+          <div style={{ marginLeft: 20 }}>
+            <DiagnosisTree
+              data={node.children}
+              onSelect={onSelect}
+              openNodes={openNodes}
+              toggleNode={toggleNode}
+              selectedCode={selectedCode}
+            />
+          </div>
+        )}
+      </div>
+    );
+  });
+}
+const buildOpenNodesToDepth = (data, maxDepth = 2, depth = 0, acc = {}) => {
+  if (depth >= maxDepth) return acc;
+
+  data.forEach((node) => {
+    if (node.children) {
+      acc[node.code] = true;
+      buildOpenNodesToDepth(node.children, maxDepth, depth + 1, acc);
+    }
+  });
+
+  return acc;
+};
+function findPathToCode(data, targetCode, path = []) {
+  for (const node of data) {
+    const newPath = [...path, node];
+
+    if (node.code === targetCode) {
+      return newPath;
+    }
+
+    if (node.children) {
+      const result = findPathToCode(node.children, targetCode, newPath);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
 
 const procedureOptions = [
   { value: "", label: "—" },
@@ -179,6 +251,72 @@ export default function MedTable() {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [isLoaded, setIsLoaded] = useState(false);
   const [rows, setRows] = useState([createEmptyRow()]);
+  const [modalState, setModalState] = useState({
+    open: false,
+    rowId: null,
+    field: null,
+  });
+  const [openNodes, setOpenNodes] = useState({});
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState({
+    rowId: null,
+    field: null,
+    code: null,
+  });
+  const toggleNode = (code) => {
+    setOpenNodes((prev) => ({
+      ...prev,
+      [code]: !prev[code],
+    }));
+  };
+  const selectDiagnosis = (node) => {
+    const isSame =
+      modalState.rowId &&
+      rows.find((r) => r.id === modalState.rowId)?.[modalState.field] ===
+        node.code;
+
+    updateCell(modalState.rowId, modalState.field, node.code);
+
+    setSelectedDiagnosis({
+      rowId: null,
+      field: null,
+      code: null,
+    });
+
+    setModalState({ open: false, rowId: null, field: null });
+  };
+  function buildOpenNodesFromPath(path) {
+    const open = {};
+
+    path.forEach((node) => {
+      if (node.children) {
+        open[node.code] = true;
+      }
+    });
+
+    return open;
+  }
+  const openDiagnosisModal = (rowId, field) => {
+    const currentValue = rows.find((r) => r.id === rowId)?.[field];
+
+    let open = {};
+
+    if (currentValue) {
+      const path = findPathToCode(icdData, currentValue);
+      if (path) open = buildOpenNodesFromPath(path);
+    } else {
+      open = buildOpenNodesToDepth(icdData, 2);
+    }
+
+    setOpenNodes(open);
+
+    setSelectedDiagnosis({
+      rowId,
+      field,
+      code: currentValue,
+    });
+
+    setModalState({ open: true, rowId, field });
+  };
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -220,8 +358,14 @@ export default function MedTable() {
         if (r.id !== id) return r;
 
         const updatedRow = { ...r, [key]: value };
+        if (
+          (key === "col9_1" || key === "col9_2") &&
+          (!value || value.trim() === "")
+        ) {
+          setModalState({ open: false, rowId: null, field: null });
+          setSelectedDiagnosis({ rowId: null, field: null, code: null });
+        }
 
-        // оновлення col14
         if (["col10_1", "col10_2", "col10_3", "col11"].includes(key)) {
           const procSum = ["col10_1", "col10_2", "col10_3"].reduce(
             (acc, k) => acc + (procedurePoints[updatedRow[k]] || 0),
@@ -265,23 +409,21 @@ export default function MedTable() {
   if (!hasEmptyLastRow) {
     rowsToRender.push(createEmptyRow());
   }
-  // В MedTable.js
+
   const handleKeyDown = (e, rowId, cellKey) => {
     const excludedCells = ["col9_1_tooth", "col9_2_tooth"];
     if (e.key === "Delete" && !excludedCells.includes(cellKey)) {
       if (window.confirm("Ви впевнені, що хочете видалити дані пацієнта?")) {
         deleteRow(rowId);
       }
-      return; // не продовжувати навігацію
+      return;
     }
 
-    // Навігація стрілками
     const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
     if (!arrowKeys.includes(e.key)) return;
 
-    e.preventDefault(); // щоб не рухати курсор всередині input
+    e.preventDefault();
 
-    // Отримуємо індекси рядка і колонки
     const rowIndex = rows.findIndex((r) => r.id === rowId);
     const colKeys = [
       "col1",
@@ -478,8 +620,8 @@ export default function MedTable() {
                   }
                   updateCell={(key, value) => updateCell(row.id, key, value)}
                   deleteRow={() => deleteRow(row.id)}
-                  diagnosisOptions={diagnosisOptions}
                   procedureOptions={procedureOptions}
+                  openDiagnosisModal={openDiagnosisModal}
                 />,
               );
 
@@ -520,6 +662,19 @@ export default function MedTable() {
           })()}
         </tbody>
       </table>
+      {modalState.open && (
+        <div className={css.modal}>
+          <div className={css.modalContent}>
+            <DiagnosisTree
+              data={icdData}
+              onSelect={selectDiagnosis}
+              openNodes={openNodes}
+              toggleNode={toggleNode}
+              selectedCode={selectedDiagnosis.code}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

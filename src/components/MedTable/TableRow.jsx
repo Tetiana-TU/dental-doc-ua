@@ -6,8 +6,8 @@ export default function TableRow({
   updateCell,
   rowNumber,
   onKeyDownCustom,
-  diagnosisOptions,
   procedureOptions,
+  openDiagnosisModal,
 }) {
   const handleKeyDown = (e, cellKey) => {
     if (onKeyDownCustom) {
@@ -99,29 +99,25 @@ export default function TableRow({
       {/* ДІАГНОЗ 1 */}
       <td className={css.col91}>
         <div className={css.diagWrap}>
-          <select
+          <input
             className={css.myList}
-            value={row.col9_1}
-            onChange={(e) => updateCell("col9_1", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, "col9_1")}
-            data-row={row.id}
-            data-col="col9_1"
-          >
-            {diagnosisOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            value={row.col9_1 || ""}
+            readOnly
+            placeholder="Оберіть діагноз"
+            onClick={() => openDiagnosisModal(row.id, "col9_1", row.col9_1)}
+            onKeyDown={(e) => {
+              if (e.key === "Delete" || e.key === "Backspace") {
+                e.stopPropagation(); // щоб не видалився рядок
+                updateCell("col9_1", "");
+              }
+            }}
+          />
 
           <input
             className={css.toothInput}
             value={row.col9_1_tooth}
             onChange={(e) => updateCell("col9_1_tooth", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, "col9_1_tooth")}
             placeholder="№ зуба"
-            data-row={row.id}
-            data-col="col9_1_tooth"
           />
         </div>
       </td>
@@ -129,29 +125,25 @@ export default function TableRow({
       {/* ДІАГНОЗ 2 */}
       <td className={css.col92}>
         <div className={css.diagWrap}>
-          <select
+          <input
             className={css.myList}
-            value={row.col9_2}
-            onChange={(e) => updateCell("col9_2", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, "col9_2")}
-            data-row={row.id}
-            data-col="col9_2"
-          >
-            {diagnosisOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            value={row.col9_2 || ""}
+            readOnly
+            placeholder="Оберіть діагноз"
+            onClick={() => openDiagnosisModal(row.id, "col9_2", row.col9_2)}
+            onKeyDown={(e) => {
+              if (e.key === "Delete" || e.key === "Backspace") {
+                e.stopPropagation(); // щоб не видалився рядок
+                updateCell("col9_2", "");
+              }
+            }}
+          />
 
           <input
             className={css.toothInput}
             value={row.col9_2_tooth}
             onChange={(e) => updateCell("col9_2_tooth", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, "col9_2_tooth")}
             placeholder="№ зуба"
-            data-row={row.id}
-            data-col="col9_2_tooth"
           />
         </div>
       </td>

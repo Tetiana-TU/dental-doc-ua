@@ -110,6 +110,11 @@ table {
 .separatorRow td {
   border-bottom: 4px double black;
 }
+.totalRow {
+  font-weight: 700;
+  background-color: #e8f0ff;
+  border-top: 2px solid #000;
+}
 @media print {
   body {
     background: none;
@@ -127,5 +132,8 @@ table {
   .newPage {
     break-before: page;
     page-break-before: always;
+  }
+  .noPrint {
+    display: none !important;
   }
 }
