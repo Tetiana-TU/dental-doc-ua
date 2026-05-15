@@ -193,6 +193,7 @@ const procedurePoints = {
   операція_імплантати: 4,
   операція_інші: 3,
   рентген: 0.5,
+  оглянуто_в_порядку_планової_санації: 1,
   планова_санація: 1,
   гігієна: 1,
   навчання_догляду: 1,
@@ -209,11 +210,15 @@ function getCurrentDate() {
   return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1).toString().padStart(2, "0")}.${now.getFullYear()}`;
 }
 
-function createEmptyRow() {
+function createEmptyRow({ day, month, year }) {
+  const now = new Date();
+
+  const date = `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
+
   return {
     id: crypto.randomUUID(),
-    col1: "",
-    col2: getCurrentDate(),
+    colDate: date,
+    col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
     col4: "",
     col5: "1",
@@ -233,30 +238,52 @@ function createEmptyRow() {
     col14: 0,
   };
 }
-function saveAllRowsReact(rows, month, year) {
+function saveAllRowsReact(rows, date) {
   const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
-  if (!archive[year]) {
-    archive[year] = {};
+  if (!archive[date.year]) archive[date.year] = {};
+  if (!archive[date.year][date.month]) {
+    archive[date.year][date.month] = {};
   }
 
-  archive[year][month] = rows;
-
+  archive[date.year][date.month][date.day] = rows;
+  console.log("Зберігається:", archive);
+  console.log("DATE:", date);
+  console.log("ROWS:", rows);
+  console.log("ARCHIVE:", archive);
   localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
-  localStorage.setItem("dailyData", JSON.stringify(rows));
 }
+
 export default function MedTable() {
   const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [rows, setRows] = useState([createEmptyRow()]);
+  const day = now.getDate();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  const [selectedDate, setSelectedDate] = useState({
+    day,
+    month,
+    year,
+  });
+  const [selectedMonth, setSelectedMonth] = useState(month);
+  const [selectedYear, setSelectedYear] = useState(year);
+
+  useEffect(() => {
+    setSelectedDate((prev) => ({
+      day: prev.day, // або 1
+      month: selectedMonth,
+      year: selectedYear,
+    }));
+  }, [selectedMonth, selectedYear]);
+  const [rows, setRows] = useState([]);
   const [modalState, setModalState] = useState({
     open: false,
     rowId: null,
     field: null,
   });
   const [openNodes, setOpenNodes] = useState({});
+  const isFirstLoad = useRef(true);
+
   const [selectedDiagnosis, setSelectedDiagnosis] = useState({
     rowId: null,
     field: null,
@@ -318,39 +345,38 @@ export default function MedTable() {
     setModalState({ open: true, rowId, field });
   };
   useEffect(() => {
-    if (!isLoaded) return;
-
-    saveAllRowsReact(rows, selectedMonth, selectedYear);
-  }, [rows, selectedMonth, selectedYear, isLoaded]);
+    if (!rows.length) return;
+    saveAllRowsReact(rows, selectedDate);
+  }, [rows, selectedDate]);
 
   useEffect(() => {
     const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
-    const monthData = archive[selectedYear]?.[selectedMonth];
-
-    if (monthData && monthData.length) {
-      setRows(monthData);
-    } else {
-      setRows([createEmptyRow()]);
+    const monthData = archive?.[selectedYear]?.[selectedMonth] || {};
+    if (!monthData) {
+      setRows([]);
+      return;
     }
+    const usedIds = new Set();
 
-    setIsLoaded(true);
+    const allRows = Object.entries(monthData)
+      .sort(([a], [b]) => Number(a) - Number(b)) // сортуємо дні
+      .flatMap(([day, rows]) =>
+        rows.map((row) => {
+          let id = row.id || crypto.randomUUID();
+
+          if (usedIds.has(id)) {
+            id = crypto.randomUUID();
+          }
+
+          usedIds.add(id);
+
+          return { ...row, id };
+        }),
+      );
+
+    setRows(allRows.length ? allRows : []);
   }, [selectedMonth, selectedYear]);
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      if (!row.col2) return true;
-      const parts = row.col2.split(".");
-      const rowMonth = parseInt(parts[1], 10);
-      const rowYear = parseInt(parts[2], 10);
-
-      const monthMatch =
-        !selectedMonth || rowMonth === parseInt(selectedMonth, 10);
-      const yearMatch = !selectedYear || rowYear === parseInt(selectedYear, 10);
-
-      return monthMatch && yearMatch;
-    });
-  }, [rows, selectedMonth, selectedYear]);
 
   const updateCell = (id, key, value) => {
     setRows((prevRows) => {
@@ -380,35 +406,47 @@ export default function MedTable() {
 
       const lastRow = updated[updated.length - 1];
 
-      if (id === lastRow.id && key === "col3" && (value || "").trim() !== "") {
-        return [...updated, createEmptyRow()];
+      if ((lastRow.col3 || "").trim() !== "") {
+        const hasEmpty = updated.some((r) => !(r.col3 || "").trim());
+
+        if (!hasEmpty) {
+          updated.push(createEmptyRow(selectedDate));
+        }
       }
 
       return updated;
     });
   };
+  const grouped = rows.reduce((acc, row) => {
+    const date = row.colDate || "Без дати";
+
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+
+    acc[date].push(row);
+
+    return acc;
+  }, {});
 
   const deleteRow = (id) => {
     // 2. Оновлення стану
     setRows((prevRows) => {
       const updated = prevRows.filter((row) => row.id !== id);
-      const finalRows = updated.length > 0 ? updated : [createEmptyRow()];
+      const finalRows =
+        updated.length > 0 ? updated : [createEmptyRow(selectedDate)];
 
       // Зберігаємо одразу після видалення
-      saveAllRowsReact(finalRows, selectedMonth, selectedYear);
+      saveAllRowsReact(finalRows, selectedDate);
 
       return finalRows;
     });
   };
-  const rowsToRender = [...filteredRows];
+  const rowsToRender = rows;
 
   const hasEmptyLastRow = rowsToRender.some(
     (r) => !r.col3 || r.col3.trim() === "",
   );
-
-  if (!hasEmptyLastRow) {
-    rowsToRender.push(createEmptyRow());
-  }
 
   const handleKeyDown = (e, rowId, cellKey) => {
     const excludedCells = ["col9_1_tooth", "col9_2_tooth"];
@@ -493,7 +531,7 @@ export default function MedTable() {
           {/*ПЕРШИЙ РЯДОК ЗАГОЛОВКІВ*/}
           <tr>
             <th rowSpan="2">Номер п/п</th>
-            <th rowSpan="2">Дата</th>
+            <th rowSpan="2">Години прийому</th>
             <th rowSpan="2">
               Прізвище, ім’я, по батькові <br />
               пацієнта
@@ -584,69 +622,61 @@ export default function MedTable() {
         <tbody id="tableBody" className={css.tableBody}>
           {(() => {
             const rowsWithDailyTotals = [];
-            let currentDate = null;
-            let dailySum = 0;
-            let rowNumber = 1; // номер пацієнта
 
-            filteredRows.forEach((row) => {
-              // якщо дата змінилася або новий день
-              if (row.col2 !== currentDate) {
-                if (currentDate !== null) {
-                  // Рядок підсумку за день
-                  rowsWithDailyTotals.push(
-                    <tr key={`total-${currentDate}`} className={css.totalRow}>
-                      {Array.from({ length: 16 }).map((_, idx) => (
-                        <td key={idx}></td>
-                      ))}
-                      <td style={{ fontWeight: "bold", textAlign: "center" }}>
-                        {dailySum}
-                      </td>
-                    </tr>,
-                  );
-                }
-                currentDate = row.col2;
-                dailySum = 0;
-                rowNumber = 1; // скидаємо нумерацію на новий день
-              }
+            Object.entries(grouped).forEach(([date, dayRows]) => {
+              let dailySum = 0;
 
-              // додаємо рядок пацієнта
+              // заголовок дня
               rowsWithDailyTotals.push(
-                <TableRow
-                  key={row.id}
-                  row={row}
-                  rowNumber={rowNumber++}
-                  onKeyDownCustom={(e, cellKey) =>
-                    handleKeyDown(e, row.id, cellKey)
-                  }
-                  updateCell={(key, value) => updateCell(row.id, key, value)}
-                  deleteRow={() => deleteRow(row.id)}
-                  procedureOptions={procedureOptions}
-                  openDiagnosisModal={openDiagnosisModal}
-                />,
+                <tr key={`date-${date}`}>
+                  <td
+                    colSpan="17"
+                    style={{ fontWeight: "bold", textAlign: "center" }}
+                  >
+                    {date}
+                  </td>
+                </tr>,
               );
 
-              dailySum += parseFloat(row.col14) || 0;
-            });
+              // рядки пацієнтів
+              dayRows.forEach((row, index) => {
+                dailySum += Number(row.col14) || 0;
 
-            // підсумок останнього дня
-            if (currentDate) {
+                rowsWithDailyTotals.push(
+                  <TableRow
+                    key={`${row.id}-${index}`}
+                    row={row}
+                    rowNumber={index + 1}
+                    updateCell={updateCell}
+                    deleteRow={() => deleteRow(row.id)}
+                    procedureOptions={procedureOptions}
+                    openDiagnosisModal={openDiagnosisModal}
+                    onKeyDownCustom={(e, cellKey) =>
+                      handleKeyDown(e, row.id, cellKey)
+                    }
+                  />,
+                );
+              });
+
+              // підсумок за день
               rowsWithDailyTotals.push(
-                <tr key={`total-${currentDate}`} className={css.totalRow}>
+                <tr key={`total-${date}`} className={css.totalRow}>
                   {Array.from({ length: 16 }).map((_, idx) => (
                     <td key={idx}></td>
                   ))}
                   <td style={{ fontWeight: "bold", textAlign: "center" }}>
-                    {dailySum}
+                    {dailySum.toFixed(2)}
                   </td>
                 </tr>,
               );
-            }
+            });
 
-            // підсумок за місяць
-            const monthTotal = filteredRows.reduce(
-              (sum, row) => sum + (parseFloat(row.col14) || 0),
+            // місячний підсумок
+            const monthTotal = rows.reduce(
+              (sum, row) => sum + (Number(row.col14) || 0),
               0,
             );
+
             rowsWithDailyTotals.push(
               <tr key="month-total" className={css.monthTotalRow}>
                 {Array.from({ length: 16 }).map((_, idx) => (

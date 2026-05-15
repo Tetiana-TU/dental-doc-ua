@@ -20,27 +20,27 @@ function objectToRow1(obj) {
     obj.pulpitisPermanentChildren, // пульпіт тимчасові
     obj.periodontitisPermanent, // періодонтит постійні 14
     obj.periodontitisPermanentChildren, //15
-    obj.pulpitisTemporary,
-    obj.periodontitisTemporary,
-    "",
-    "",
-    "",
-    "",
-    "", // резервні колонки
-    obj.PlC,
-    "",
-    "",
-    obj.PlLC,
-    `${obj.anesthesiaLocal}/${obj.anesthesiaGeneral}`,
-    "",
-    "",
-    obj.naplast,
-    obj.naplast,
-    "",
-    "",
-    "",
-    "",
-    "",
+    obj.pulpitisTemporary, //16
+    obj.periodontitisTemporary, //17
+    obj.P_vitalTotal, //18
+    obj.P_vitalChildren, // 19
+    obj.PtTotal, // 20
+    obj.PtChildren, // 21
+    obj.depulped, // 22
+    obj.PlC, //23
+    "", //24
+    "", //25
+    obj.PlLC, //26
+    obj.anesthesiaLocal + "/" + obj.anesthesiaGeneral,
+    obj.medlikparodont, //28
+    obj.mucosaTreatmentChildren, //29
+    obj.naplast, //30
+    obj.mucosaTreatment, //31
+    obj.kuretazh, //32
+    obj.klapteva, //33
+    obj.shinuvanya, //34
+    obj.mucosaFullCourse,
+    obj.mucosaFullCourseChildren,
   ];
 }
 
@@ -54,25 +54,25 @@ function objectToRow2(obj) {
 
   return [
     totalExtractions,
-    obj.ToothExtractionCaries,
-    obj.ExtractionParodont,
-    obj.ToothExtractionCariesChildren,
-    obj.ExtractionOrthodonticChildren,
-    "",
-    obj.ExtractionphysiologyChildren,
-    "",
-    obj.OperatioInflammatoryProcesses,
-    obj.OperatioTumors,
-    obj.OperatioImplants,
-    obj.OperatioOthers,
-    obj.sanatio,
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
+    obj.ToothExtractionCaries, //38
+    obj.ExtractionParodont, //39
+    obj.ToothExtractionCariesChildren, //40
+    obj.ExtractionOrthodonticChildren, //41
+    obj.ToothExtractionCaries42, //42
+    obj.ExtractionphysiologyChildren, //43
+    obj.OperatioTotal,
+    obj.OperatioInflammatoryProcesses, //45
+    obj.OperatioTumors, //46
+    obj.OperatioImplants, //47
+    obj.OperatioOthers, //48
+    obj.sanatio, //49
+    obj.sanatioChildren, //50
+    obj.examinedAdults, //51
+    obj.needSanationAdults, //52
+    obj.sanatedAdults, //53
+    obj.examinedChildren, //54
+    obj.needSanationChildren, //55
+    obj.sanatedChildren, //56
     obj.HygieneEducation,
     obj.OralCare,
     obj.ProfessionalOralHygiene,

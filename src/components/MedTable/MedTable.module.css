@@ -173,7 +173,7 @@ tbody td[contenteditable="true"]:focus {
   width: 3%;
 }
 .medTable col:nth-child(2) {
-  width: 6%;
+  width: 4%;
 }
 .medTable col:nth-child(3) {
   width: 12%;

@@ -16,10 +16,6 @@ body {
   margin: 0 auto;
   padding: 10px 10px;
 }
-/* .summary {
-  margin-top: 20px;
-  font-size: 18px;
-} */
 
 @media print {
   body,

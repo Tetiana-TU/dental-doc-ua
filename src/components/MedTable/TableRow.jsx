@@ -31,7 +31,7 @@ export default function TableRow({
       <td className={css.col3}>
         <input
           value={row.col3 || ""}
-          onChange={(e) => updateCell("col3", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col3", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col3")}
           data-row={row.id}
           data-col="col3"
@@ -41,7 +41,7 @@ export default function TableRow({
       <td className={css.col4}>
         <input
           value={row.col4}
-          onChange={(e) => updateCell("col4", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col4", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col4")}
           data-row={row.id}
           data-col="col4"
@@ -52,7 +52,7 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col5}
-          onChange={(e) => updateCell("col5", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col5", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col5")}
           data-row={row.id}
           data-col="col5"
@@ -65,7 +65,7 @@ export default function TableRow({
       <td className={css.col6}>
         <input
           value={row.col6}
-          onChange={(e) => updateCell("col6", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col6", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col6")}
           data-row={row.id}
           data-col="col6"
@@ -76,7 +76,7 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col7}
-          onChange={(e) => updateCell("col7", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col7", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col7")}
           data-row={row.id}
           data-col="col7"
@@ -89,7 +89,7 @@ export default function TableRow({
       <td className={css.col8}>
         <input
           value={row.col8}
-          onChange={(e) => updateCell("col8", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col8", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col8")}
           data-row={row.id}
           data-col="col8"
@@ -108,7 +108,7 @@ export default function TableRow({
             onKeyDown={(e) => {
               if (e.key === "Delete" || e.key === "Backspace") {
                 e.stopPropagation(); // щоб не видалився рядок
-                updateCell("col9_1", "");
+                updateCell(row.id, "col9_1", "");
               }
             }}
           />
@@ -116,7 +116,7 @@ export default function TableRow({
           <input
             className={css.toothInput}
             value={row.col9_1_tooth}
-            onChange={(e) => updateCell("col9_1_tooth", e.target.value)}
+            onChange={(e) => updateCell(row.id, "col9_1_tooth", e.target.value)}
             placeholder="№ зуба"
           />
         </div>
@@ -134,7 +134,7 @@ export default function TableRow({
             onKeyDown={(e) => {
               if (e.key === "Delete" || e.key === "Backspace") {
                 e.stopPropagation(); // щоб не видалився рядок
-                updateCell("col9_2", "");
+                updateCell(row.id, "col9_2", "");
               }
             }}
           />
@@ -142,7 +142,7 @@ export default function TableRow({
           <input
             className={css.toothInput}
             value={row.col9_2_tooth}
-            onChange={(e) => updateCell("col9_2_tooth", e.target.value)}
+            onChange={(e) => updateCell(row.id, "col9_2_tooth", e.target.value)}
             placeholder="№ зуба"
           />
         </div>
@@ -154,7 +154,7 @@ export default function TableRow({
           <select
             className={css.myList}
             value={row[`col10_${num}`]}
-            onChange={(e) => updateCell(`col10_${num}`, e.target.value)}
+            onChange={(e) => updateCell(row.id, `col10_${num}`, e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, `col10_${num}`)}
             data-row={row.id}
             data-col={`col10_${num}`}
@@ -172,7 +172,7 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col11}
-          onChange={(e) => updateCell("col11", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col11", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col11")}
           data-row={row.id}
           data-col="col11"
@@ -187,7 +187,7 @@ export default function TableRow({
         <select
           className={css.myList}
           value={row.col12}
-          onChange={(e) => updateCell("col12", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col12", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col12")}
           data-row={row.id}
           data-col="col12"
@@ -200,7 +200,7 @@ export default function TableRow({
       <td className={css.col13}>
         <input
           value={row.col13}
-          onChange={(e) => updateCell("col13", e.target.value)}
+          onChange={(e) => updateCell(row.id, "col13", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col13")}
           data-row={row.id}
           data-col="col13"

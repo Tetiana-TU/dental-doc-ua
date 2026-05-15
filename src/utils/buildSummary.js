@@ -13,24 +13,25 @@ function isChild(age) {
   return !isNaN(num) && num <= 17;
 }
 
-// Універсальна перевірка дати
 function isInPeriod(dateStr, start, end) {
   if (!start || !end) return true;
+
   const parts = dateStr.includes(".") ? dateStr.split(".") : dateStr.split("-");
+
   let date;
+
   if (parts.length === 3) {
-    // DD.MM.YYYY
     if (dateStr.includes(".")) {
       const [d, m, y] = parts;
       date = new Date(y, m - 1, d);
     } else {
-      // YYYY-MM-DD
       const [y, m, d] = parts;
       date = new Date(y, m - 1, d);
     }
   } else {
     return false;
   }
+
   date.setHours(0, 0, 0, 0);
   return date >= start && date <= end;
 }
@@ -38,10 +39,21 @@ function isInPeriod(dateStr, start, end) {
 export function buildSummary(dailyData, startStr, endStr) {
   const start = startStr ? new Date(startStr) : null;
   if (start) start.setHours(0, 0, 0, 0);
+
   const end = endStr ? new Date(endStr) : null;
   if (end) end.setHours(23, 59, 59, 999);
 
   const groupedByDate = {};
+
+  const examinedAdultsSet = new Set();
+  const examinedChildrenSet = new Set();
+
+  const needSanationAdultsSet = new Set();
+  const needSanationChildrenSet = new Set();
+
+  const sanatedAdultsSet = new Set();
+  const sanatedChildrenSet = new Set();
+
   function classifyDiagnosis(code) {
     if (!code) return null;
 
@@ -51,18 +63,22 @@ export function buildSummary(dailyData, startStr, endStr) {
 
     return null;
   }
+
+  function getToothType(tooth) {
+    const num = parseInt(tooth, 10);
+
+    if (num >= 11 && num <= 48) return "permanent";
+    if (num >= 51 && num <= 85) return "temporary";
+
+    return null;
+  }
+
   dailyData.forEach((row) => {
-    if (!row[3] || !row[3].trim()) return; // ПІБ
+    if (!row[3] || !row[3].trim()) return;
+    const patientId = row[0];
     const date = row[2];
     if (!date || !isInPeriod(date, start, end)) return;
-    function getToothType(tooth) {
-      const num = parseInt(tooth, 10);
 
-      if (num >= 11 && num <= 48) return "permanent";
-      if (num >= 51 && num <= 85) return "temporary";
-
-      return null;
-    }
     if (!groupedByDate[date]) {
       groupedByDate[date] = {
         date,
@@ -72,50 +88,72 @@ export function buildSummary(dailyData, startStr, endStr) {
         primaryRural: 0,
         primaryChildren: 0,
         emergency: 0,
+
         cariesPermanent: 0,
         cariesPermanentChildren: 0,
         cariesTemporary: 0,
+
         pulpitisPermanent: 0,
         pulpitisPermanentChildren: 0,
         pulpitisTemporary: 0,
+
         periodontitisPermanent: 0,
         periodontitisPermanentChildren: 0,
         periodontitisTemporary: 0,
+
         P_vitalTotal: 0,
         P_vitalChildren: 0,
         PtTotal: 0,
         PtChildren: 0,
+
         depulped: 0,
+
         naplast: 0,
-        anesthesiaLocal: 0,
-        anesthesiaGeneral: 0,
-        PlC: 0,
-        PlAm: 0,
-        PlCC: 0,
-        PlLC: 0,
         medlikparodont: 0,
         kuretazh: 0,
         klapteva: 0,
         shinuvanya: 0,
+
         mucosaTreatment: 0,
         mucosaTreatmentChildren: 0,
+
+        mucosaFullCourse: 0,
+        mucosaFullCourseChildren: 0,
+
         ToothExtractionCaries: 0,
         ToothExtractionCariesChildren: 0,
         ExtractionParodont: 0,
         ExtractionOrthodonticChildren: 0,
         ExtractionphysiologyChildren: 0,
+
         OperatioInflammatoryProcesses: 0,
         OperatioTumors: 0,
         OperatioImplants: 0,
         OperatioOthers: 0,
+
         sanatio: 0,
-        sanatioPlanova: 0,
-        sanatioPlanovaChildren: 0,
+        sanatioChildren: 0,
+        examinedAdults: 0, // 51
+        needSanationAdults: 0, // 52
+        sanatedAdults: 0, // 53
+
+        examinedChildren: 0, // 54
+        needSanationChildren: 0, // 55
+        sanatedChildren: 0, // 56
         HygieneEducation: 0,
         OralCare: 0,
         ProfessionalOralHygiene: 0,
         RemineralizationTherapy: 0,
         PitAndFissureSealing: 0,
+
+        anesthesiaLocal: 0,
+        anesthesiaGeneral: 0,
+
+        PlC: 0,
+        PlAm: 0,
+        PlCC: 0,
+        PlLC: 0,
+
         uop: 0,
         groupSum: 0,
       };
@@ -123,42 +161,184 @@ export function buildSummary(dailyData, startStr, endStr) {
 
     const day = groupedByDate[date];
     const age = row[4];
+    const child = isChild(age);
+
+    const patientHadVisit = true;
 
     day.visits++;
 
     const primary = isPrimary(row[5]);
-    const child = isChild(age);
-
     if (primary) {
       day.primaryTotal++;
       if (row[7] === "село") day.primaryRural++;
       if (child) day.primaryChildren++;
     }
+    const treatments = [row["10-1"], row["10-2"], row["10-3"]].filter(Boolean);
+    const isPreventiveExam = treatments.some(
+      (t) => t === "оглянуто_в_порядку_планової_санації",
+    );
 
     const cases = [
-      {
-        diagnosis: row["9-1"],
-        tooth: row["9-1_tooth"],
-      },
-      {
-        diagnosis: row["9-2"],
-        tooth: row["9-2_tooth"],
-      },
+      { diagnosis: row["9-1"], tooth: row["9-1_tooth"] },
+      { diagnosis: row["9-2"], tooth: row["9-2_tooth"] },
     ].filter((c) => c.diagnosis && c.tooth);
 
-    const treatments = [row["10-1"], row["10-2"], row["10-3"]].filter(Boolean);
+    const needsSanation = cases.length > 0;
+    const isSanatedFromForm = row[12] === "Сан";
+
+    const hasTreatment = treatments.length > 0;
+    const isSanated = treatments.includes("планова_санація");
+
+    let hasParodontPatient = false;
+    let hasNaplast = false;
+    let medlikCount = 0;
+    let kuretazhCount = 0;
+    let klaptevaCount = 0;
+    let shinuvannyaCount = 0;
+
+    treatments.forEach((t) => {
+      switch (t) {
+        case "зняття_напластувань":
+          hasParodontPatient = true;
+          hasNaplast = true;
+          break;
+        case "медикаментозне_лікування_пародонту":
+          hasParodontPatient = true;
+          medlikCount++;
+          break;
+        case "кюретаж":
+          hasParodontPatient = true;
+          kuretazhCount++;
+          break;
+        case "клаптева_операція":
+          hasParodontPatient = true;
+          klaptevaCount++;
+          break;
+        case "шинування_зубів":
+          hasParodontPatient = true;
+          shinuvannyaCount++;
+          break;
+        case "видалення_зуба_карієс":
+          day.ToothExtractionCaries++;
+
+          if (child) {
+            day.ToothExtractionCariesChildren++;
+          }
+          break;
+
+        case "видалення_зуба_пародонт":
+          day.ExtractionParodont++;
+          break;
+
+        case "видалення_зуба_ортодонт":
+          day.ExtractionOrthodonticChildren++;
+          break;
+
+        case "видалення_зуба_фізіол":
+          day.ExtractionphysiologyChildren++;
+          break;
+        case "операція_гострі_запальні_процеси":
+          day.OperatioInflammatoryProcesses++;
+          break;
+
+        case "операція_пухлини":
+          day.OperatioTumors++;
+          break;
+
+        case "операція_імплантати":
+          day.OperatioImplants++;
+          break;
+
+        case "операція_інші":
+          day.OperatioOthers++;
+          break;
+        case "планова_санація":
+          day.sanatio++;
+          if (child) {
+            day.sanatioChildren++; // 50
+          }
+          break;
+        case "гігієна":
+          day.HygieneEducation++;
+          break;
+
+        case "навчання_догляду":
+          day.OralCare++;
+          break;
+
+        case "професійна_гігієна":
+          day.ProfessionalOralHygiene++;
+          break;
+
+        case "ремінералізуюча_терапія":
+          day.RemineralizationTherapy++;
+          break;
+
+        case "герметизація_фісур":
+          day.PitAndFissureSealing++;
+          break;
+      }
+    });
+
+    if (isPreventiveExam) {
+      if (child) {
+        examinedChildrenSet.add(patientId);
+      } else {
+        examinedAdultsSet.add(patientId);
+      }
+    }
+    if (needsSanation) {
+      if (child) needSanationChildrenSet.add(patientId);
+      else needSanationAdultsSet.add(patientId);
+    }
+
+    if (isSanatedFromForm) {
+      if (child) sanatedChildrenSet.add(patientId);
+      else sanatedAdultsSet.add(patientId);
+    }
+    if (!child && needsSanation) {
+      day.needSanationAdults++;
+    }
+    if (child && needsSanation) {
+      day.needSanationChildren++;
+    }
+    if (!child && isSanated) {
+      day.sanatedAdults++;
+    }
+    if (child && isSanated) {
+      day.sanatedChildren++;
+    }
+    if (hasParodontPatient) {
+      day.medlikparodont++;
+
+      if (child) day.mucosaTreatmentChildren++;
+
+      if (hasNaplast) day.naplast++;
+
+      day.mucosaTreatment += medlikCount;
+      day.kuretazh += kuretazhCount;
+      day.klapteva += klaptevaCount;
+      day.shinuvanya += shinuvannyaCount;
+
+      if (
+        medlikCount > 0 &&
+        (hasNaplast || kuretazhCount || klaptevaCount || shinuvannyaCount)
+      ) {
+        day.mucosaFullCourse++;
+        if (child) day.mucosaFullCourseChildren++;
+      }
+    }
 
     cases.forEach(({ diagnosis, tooth }) => {
       const type = classifyDiagnosis(diagnosis);
       const toothType = getToothType(tooth);
-
       if (!type || !toothType) return;
 
-      const hasCariesFilling = treatments.some((t) =>
+      const hasFilling = treatments.some((t) =>
         ["PlC", "PlLC", "PlAm", "PlCC"].includes(t),
       );
 
-      if (type === "caries" && hasCariesFilling) {
+      if (type === "caries" && hasFilling) {
         if (toothType === "permanent") {
           day.cariesPermanent++;
           if (child) day.cariesPermanentChildren++;
@@ -166,147 +346,127 @@ export function buildSummary(dailyData, startStr, endStr) {
           day.cariesTemporary++;
         }
       }
-      const hasFilling = treatments.some((t) =>
-        ["PlC", "PlLC", "PlAm", "PlCC"].includes(t),
-      );
-      const treatedPulpitis =
-        type === "pulpitis" &&
-        treatments.some((t) => ["P_vital", "Pt"].includes(t));
 
-      const vitalMethod = treatments.includes("P_vital");
-      const isFilledCase = hasFilling;
-      const isPulpitisPermanent =
-        type === "pulpitis" && toothType === "permanent";
-
-      if (isPulpitisPermanent && isFilledCase) {
-        day.pulpitisPermanent++;
-        if (child) day.pulpitisPermanentChildren++;
-      }
-
-      const isPulpitisTemporary =
-        type === "pulpitis" && toothType === "temporary" && hasFilling;
-
-      if (isPulpitisTemporary) {
-        day.pulpitisTemporary++;
-      }
-
-      const isPeriodontitisPermanent =
-        type === "periodontitis" && toothType === "permanent";
-
-      if (isPeriodontitisPermanent && hasFilling) {
-        day.periodontitisPermanent++;
-        if (child) day.periodontitisPermanentChildren++;
-      }
-      const isPeriodontitisTemporary =
-        type === "periodontitis" && toothType === "temporary" && hasFilling;
-
-      if (isPeriodontitisTemporary) {
-        day.periodontitisTemporary++;
-      }
-      treatments.forEach((proc) => {
-        switch (proc) {
-          case "PlC":
-            day.PlC++;
-            day.groupSum++;
-            break;
-          case "PlLC":
-            day.PlLC++;
-            day.groupSum++;
-            break;
-          case "PlAm":
-            day.PlAm++;
-            day.groupSum++;
-            break;
-          case "PlCC":
-            day.PlCC++;
-            day.groupSum++;
-            break;
-          case "невідкладна_допомога":
-            day.emergency++;
-            break;
-          case "зняття_напластувань":
-            day.naplast++;
-            break;
-          case "планова_санація":
-            day.sanatio++;
-            break;
-          case "видалення_зуба_карієс":
-            day.ToothExtractionCaries++;
-            if (isChild(age)) day.ToothExtractionCariesChildren++;
-            break;
-          case "видалення_зуба_пародонт":
-            day.ExtractionParodont++;
-            break;
-          case "видалення_зуба_ортодонт":
-            day.ExtractionOrthodonticChildren++;
-            break;
-          case "видалення_зуба_фізіол":
-            day.ExtractionphysiologyChildren++;
-            break;
-          case "операція_гострі_запальні_процеси":
-            day.OperatioInflammatoryProcesses++;
-            break;
-          case "операція_пухлини":
-            day.OperatioTumors++;
-            break;
-          case "операція_імплантати":
-            day.OperatioImplants++;
-            break;
-          case "операція_інші":
-            day.OperatioOthers++;
-            break;
-          case "гігієна":
-            day.HygieneEducation++;
-            break;
-          case "навчання_догляду":
-            day.OralCare++;
-            break;
-          case "професійна_гігієна":
-            day.ProfessionalOralHygiene++;
-            break;
-          case "ремінералізуюча_терапія":
-            day.RemineralizationTherapy++;
-            break;
-          case "герметизація_фісур":
-            day.PitAndFissureSealing++;
-            break;
-          case "P_vital":
-            day.P_vitalTotal++;
-            if (child) day.P_vitalChildren++;
-            break;
-
-          case "Pt":
-            day.PtTotal++;
-            if (child) day.PtChildren++;
-            break;
-
-          case "depulp_no_caries":
-            day.depulped++;
-            break;
+      if (type === "pulpitis" && hasFilling) {
+        if (toothType === "permanent") {
+          day.pulpitisPermanent++;
+          if (child) day.pulpitisPermanentChildren++;
+        } else {
+          day.pulpitisTemporary++;
         }
-      });
+      }
 
-      if (row[11] === "місцева") day.anesthesiaLocal++;
-      if (row[11] === "загальна") day.anesthesiaGeneral++;
-
-      const uop = parseFloat(row[14]);
-      if (!isNaN(uop)) day.uop += uop;
+      if (type === "periodontitis" && hasFilling) {
+        if (toothType === "permanent") {
+          day.periodontitisPermanent++;
+          if (child) day.periodontitisPermanentChildren++;
+        } else {
+          day.periodontitisTemporary++;
+        }
+      }
     });
-  });
 
+    day.P_vitalTotal = day.pulpitisPermanent + day.pulpitisTemporary;
+    day.P_vitalChildren = day.pulpitisPermanentChildren;
+
+    day.PtTotal = day.periodontitisPermanent + day.periodontitisTemporary;
+    day.PtChildren =
+      day.periodontitisPermanentChildren + day.periodontitisTemporary;
+
+    const hasDepulp = treatments.includes("депульповано_зубів");
+    const hasCaries = cases.some(
+      (c) => classifyDiagnosis(c.diagnosis) === "caries",
+    );
+
+    if (hasDepulp && !hasCaries) {
+      day.depulped++;
+    }
+    let isTemporaryTooth = false;
+    let hasComplicatedCaries = false;
+
+    cases.forEach(({ diagnosis, tooth }) => {
+      const type = classifyDiagnosis(diagnosis);
+      const toothType = getToothType(tooth);
+
+      if (toothType === "temporary") {
+        isTemporaryTooth = true;
+      }
+
+      if (type === "pulpitis" || type === "periodontitis") {
+        hasComplicatedCaries = true;
+      }
+    });
+    treatments.forEach((proc) => {
+      switch (proc) {
+        case "PlC":
+          day.PlC++;
+          day.groupSum++;
+          break;
+        case "PlLC":
+          day.PlLC++;
+          day.groupSum++;
+          break;
+        case "PlAm":
+          day.PlAm++;
+          day.groupSum++;
+          break;
+        case "PlCC":
+          day.PlCC++;
+          day.groupSum++;
+          break;
+        case "невідкладна_допомога":
+          day.emergency++;
+          break;
+        case "видалення_зуба_карієс":
+          day.ToothExtractionCaries++;
+
+          if (child) day.ToothExtractionCariesChildren++;
+
+          // окремо графа 42 (тільки молочні + ускладнений карієс)
+          if (child && isTemporaryTooth && hasComplicatedCaries) {
+            day.ToothExtractionCaries42 =
+              (day.ToothExtractionCaries42 || 0) + 1;
+          }
+          break;
+      }
+    });
+    day.OperatioTotal =
+      day.OperatioInflammatoryProcesses +
+      day.OperatioTumors +
+      day.OperatioImplants +
+      day.OperatioOthers;
+
+    const anesthesia = row[11];
+    if (anesthesia === "value2") day.anesthesiaLocal++;
+    if (anesthesia === "value3") day.anesthesiaGeneral++;
+
+    const uop = parseFloat(row[14]);
+    if (!isNaN(uop)) day.uop += uop;
+  });
+  Object.values(groupedByDate).forEach((day) => {
+    day.examinedAdults = examinedAdultsSet.size;
+    day.examinedChildren = examinedChildrenSet.size;
+    day.needSanationAdults = needSanationAdultsSet.size;
+    day.needSanationChildren = needSanationChildrenSet.size;
+    day.sanatedAdults = sanatedAdultsSet.size;
+    day.sanatedChildren = sanatedChildrenSet.size;
+  });
   const groupedData = Object.values(groupedByDate);
 
   let monthTotal = {};
   if (groupedData.length) {
-    monthTotal = {};
     Object.keys(groupedData[0]).forEach((key) => {
       monthTotal[key] = typeof groupedData[0][key] === "number" ? 0 : "";
     });
+
     groupedData.forEach((day) => {
       Object.keys(day).forEach((key) => {
-        if (typeof day[key] === "number") monthTotal[key] += day[key];
+        if (typeof day[key] === "number") {
+          monthTotal[key] += day[key];
+        }
       });
     });
+
     monthTotal.date = "Всього";
   }
 

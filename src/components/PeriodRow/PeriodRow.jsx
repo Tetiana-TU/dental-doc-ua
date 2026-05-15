@@ -3,6 +3,7 @@ import css from "./PeriodRow.module.css";
 
 export default function PeriodRow({ month, year, setMonth, setYear }) {
   const now = new Date();
+
   const [doctor, setDoctor] = useState(() => {
     return localStorage.getItem("doctorName") || "";
   });
