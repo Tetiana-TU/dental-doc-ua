@@ -9,7 +9,7 @@ function objectToRow1(obj) {
     "", // Фактично відпрацьовано годин
     obj.visits, // Кількість відвідувань
     obj.primaryRural, // З них сільських
-    `${obj.primaryTotal}/${obj.primaryRural}`, // Кількість первинних
+    `${obj.primaryTotal || 0}/${obj.primaryRural || 0}`, // Кількість первинних
     obj.primaryChildren, // З них дітей
     obj.emergency, // Отримали невідкладну допомогу 7
     obj.groupSum, // Запломбовано зубів (сума) 8
@@ -31,7 +31,7 @@ function objectToRow1(obj) {
     "", //24
     "", //25
     obj.PlLC, //26
-    obj.anesthesiaLocal + "/" + obj.anesthesiaGeneral,
+    `${obj.anesthesiaLocal || 0}/${obj.anesthesiaGeneral || 0}`,
     obj.medlikparodont, //28
     obj.mucosaTreatmentChildren, //29
     obj.naplast, //30
@@ -89,55 +89,64 @@ export default function Form039_2_0Page() {
   const [endDate, setEndDate] = useState(
     localStorage.getItem("summaryEndDate") || "",
   );
-  const handleBuildSummary = useCallback((startDate, endDate) => {
-    if (!startDate || !endDate) {
-      setSummary({ table1: [], table2: [] });
-      return;
-    }
-
-    const rawDataMain = JSON.parse(localStorage.getItem("dailyData")) || [];
+  const handleBuildSummary = useCallback(() => {
     const rawDataArchive =
-      JSON.parse(localStorage.getItem("dailyDataArchive")) || "{}";
-    const year = "2026";
-    const month = "3";
-    const rawDataForPeriod = rawDataArchive[year]?.[month] || [];
-    const filteredArchive = rawDataForPeriod.filter(
-      (row) => !rawDataMain.some((r) => r.date === row.date),
-    );
-    const rawData = [...rawDataMain, ...filteredArchive];
+      JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
-    if (!Array.isArray(rawData)) {
+    const allArchiveRows = Object.values(rawDataArchive)
+      .flatMap((year) =>
+        Object.values(year || {}).flatMap((month) =>
+          Object.values(month || {}).flat(),
+        ),
+      )
+      .filter(Boolean);
+
+    if (!Array.isArray(allArchiveRows)) {
       setSummary({ table1: [], table2: [] });
       return;
     }
 
-    const normalizedData = rawData.map((row) => ({
-      2: row.col2,
-      3: row.col3,
-      4: row.col4,
-      5: row.col5,
-      7: row.col7,
-      "9-1": row.col9_1,
-      "9-1_tooth": row.col9_1_tooth,
-      "9-2": row.col9_2,
-      "9-2_tooth": row.col9_2_tooth,
-      "10-1": row.col10_1,
-      "10-2": row.col10_2,
-      "10-3": row.col10_3,
-      11: row.col11,
-      14: row.col14,
+    const normalizedData = allArchiveRows.map((row) => ({
+      id: row.id,
+      date: row.colDate,
+      time: row.col2,
+      name: row.col3,
+      age: row.col4,
+      visitType: row.col5,
+      medCard: row.col6,
+      residence: row.col7,
+      diagnosis1: row.col9_1,
+      tooth1: row.col9_1_tooth,
+      diagnosis2: row.col9_2,
+      tooth2: row.col9_2_tooth,
+      procedures: (row.col10_1 ? [row.col10_1] : [])
+        .concat(row.col10_2 || [], row.col10_3 || [])
+        .filter(Boolean),
+      anesthesia: row.col11,
+      sanation: row.col12,
+      uop: row.col14,
     }));
 
+    const uniqueKey = (r) =>
+      `${r.date || "no-date"}_${r.time || "no-time"}_${(r.name || "no-name")
+        .toString()
+        .trim()}`;
+
+    const deduplicatedData = Array.from(
+      new Map(normalizedData.map((row) => [uniqueKey(row), row])).values(),
+    );
+    const validRows = deduplicatedData.filter(
+      (row) => row.name && row.name.trim() !== "",
+    );
     const { groupedData, monthTotal } = buildSummary(
-      normalizedData,
+      validRows,
       startDate,
       endDate,
     );
     function cleanRow(row) {
-      return row.map((cell) => {
-        if (cell === 0 || cell === null || cell === undefined) return "";
-        return cell;
-      });
+      return row.map((cell) =>
+        cell === 0 || cell === null || cell === undefined ? "" : cell,
+      );
     }
     const table1 = groupedData.map((obj) => cleanRow(objectToRow1(obj)));
     const table2 = groupedData.map((obj) => cleanRow(objectToRow2(obj)));
@@ -146,7 +155,7 @@ export default function Form039_2_0Page() {
     table2.push(cleanRow(objectToRow2(monthTotal)));
 
     setSummary({ table1, table2 });
-  }, []);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     document.title = "Форма №039-2/0";
@@ -155,7 +164,13 @@ export default function Form039_2_0Page() {
   useEffect(() => {
     handleBuildSummary(startDate, endDate);
   }, [startDate, endDate, handleBuildSummary]);
+  useEffect(() => {
+    localStorage.setItem("summaryStartDate", startDate);
+  }, [startDate]);
 
+  useEffect(() => {
+    localStorage.setItem("summaryEndDate", endDate);
+  }, [endDate]);
   return (
     <div className={css.formPage}>
       <h3 className={`${css.titleForm39} ${css.noPrint}`}>
@@ -166,7 +181,6 @@ export default function Form039_2_0Page() {
         endDate={endDate}
         setStartDate={setStartDate}
         setEndDate={setEndDate}
-        buildSummary={handleBuildSummary}
       />
 
       {/* ====== ПЕРША ТАБЛИЦЯ ====== */}

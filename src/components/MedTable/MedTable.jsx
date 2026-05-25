@@ -209,7 +209,18 @@ function getCurrentDate() {
   const now = new Date();
   return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1).toString().padStart(2, "0")}.${now.getFullYear()}`;
 }
+function getDefaultDate(selectedMonth, selectedYear) {
+  const now = new Date();
 
+  const isCurrentMonth =
+    selectedMonth === now.getMonth() + 1 && selectedYear === now.getFullYear();
+
+  return {
+    day: isCurrentMonth ? now.getDate() : 1,
+    month: selectedMonth,
+    year: selectedYear,
+  };
+}
 function createEmptyRow({ day, month, year }) {
   const now = new Date();
 
@@ -238,21 +249,18 @@ function createEmptyRow({ day, month, year }) {
     col14: 0,
   };
 }
-function saveAllRowsReact(rows, date) {
-  const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
+// function saveAllRowsReact(rows, date) {
+//   const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
-  if (!archive[date.year]) archive[date.year] = {};
-  if (!archive[date.year][date.month]) {
-    archive[date.year][date.month] = {};
-  }
+//   if (!archive[date.year]) archive[date.year] = {};
+//   if (!archive[date.year][date.month]) {
+//     archive[date.year][date.month] = {};
+//   }
 
-  archive[date.year][date.month][date.day] = rows;
-  console.log("Зберігається:", archive);
-  console.log("DATE:", date);
-  console.log("ROWS:", rows);
-  console.log("ARCHIVE:", archive);
-  localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
-}
+//   archive[date.year][date.month][date.day] = rows;
+
+//   localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
+// }
 
 export default function MedTable() {
   const now = new Date();
@@ -260,21 +268,54 @@ export default function MedTable() {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
 
-  const [selectedDate, setSelectedDate] = useState({
-    day,
-    month,
-    year,
-  });
+  // const [selectedDate, setSelectedDate] = useState({
+  //   day,
+  //   month,
+  //   year,
+  // });
   const [selectedMonth, setSelectedMonth] = useState(month);
   const [selectedYear, setSelectedYear] = useState(year);
+  const saveAllRowsReact = (rowsToSave) => {
+    const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
-  useEffect(() => {
-    setSelectedDate((prev) => ({
-      day: prev.day, // або 1
-      month: selectedMonth,
-      year: selectedYear,
-    }));
-  }, [selectedMonth, selectedYear]);
+    const groupedRows = rowsToSave.reduce((acc, row) => {
+      if (!row.colDate) return acc;
+
+      const [day, month, year] = row.colDate.split(".");
+
+      const m = String(Number(month));
+      const d = String(Number(day));
+
+      if (!acc[year]) acc[year] = {};
+      if (!acc[year][m]) acc[year][m] = {};
+      if (!acc[year][m][d]) acc[year][m][d] = [];
+
+      acc[year][m][d].push(row);
+
+      return acc;
+    }, {});
+    // оновлюємо тільки потрібні дні
+    Object.entries(groupedRows).forEach(([year, months]) => {
+      if (!archive[year]) archive[year] = {};
+
+      Object.entries(months).forEach(([month, days]) => {
+        if (!archive[year][month]) archive[year][month] = {};
+
+        Object.entries(days).forEach(([day, rows]) => {
+          archive[year][month][day] = rows;
+        });
+      });
+    });
+
+    localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
+  };
+  // useEffect(() => {
+  //   setSelectedDate((prev) => ({
+  //     day:  1,
+  //     month: selectedMonth,
+  //     year: selectedYear,
+  //   }));
+  // }, [selectedMonth, selectedYear]);
   const [rows, setRows] = useState([]);
   const [modalState, setModalState] = useState({
     open: false,
@@ -282,7 +323,8 @@ export default function MedTable() {
     field: null,
   });
   const [openNodes, setOpenNodes] = useState({});
-  const isFirstLoad = useRef(true);
+
+  const [loaded, setLoaded] = useState(false);
 
   const [selectedDiagnosis, setSelectedDiagnosis] = useState({
     rowId: null,
@@ -344,23 +386,21 @@ export default function MedTable() {
 
     setModalState({ open: true, rowId, field });
   };
-  useEffect(() => {
-    if (!rows.length) return;
-    saveAllRowsReact(rows, selectedDate);
-  }, [rows, selectedDate]);
+  // useEffect(() => {
+  //   if (!rows.length) return;
+  //   saveAllRowsReact(rows, selectedDate);
+  // }, [rows, selectedDate]);
 
   useEffect(() => {
     const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
-    const monthData = archive?.[selectedYear]?.[selectedMonth] || {};
-    if (!monthData) {
-      setRows([]);
-      return;
-    }
+    const monthData =
+      archive?.[String(selectedYear)]?.[String(selectedMonth)] || {};
+
     const usedIds = new Set();
 
     const allRows = Object.entries(monthData)
-      .sort(([a], [b]) => Number(a) - Number(b)) // сортуємо дні
+      .sort(([a], [b]) => Number(a) - Number(b))
       .flatMap(([day, rows]) =>
         rows.map((row) => {
           let id = row.id || crypto.randomUUID();
@@ -375,9 +415,28 @@ export default function MedTable() {
         }),
       );
 
-    setRows(allRows.length ? allRows : []);
+    if (allRows.length > 0) {
+      setRows(allRows);
+    } else {
+      const defaultDate = getDefaultDate(selectedMonth, selectedYear);
+
+      const now = new Date();
+
+      const isCurrentMonth =
+        selectedMonth === now.getMonth() + 1 &&
+        selectedYear === now.getFullYear();
+
+      setRows(isCurrentMonth ? [createEmptyRow(defaultDate)] : []);
+    }
+
+    setLoaded(true);
   }, [selectedMonth, selectedYear]);
 
+  useEffect(() => {
+    if (!loaded || rows.length === 0) return;
+
+    saveAllRowsReact(rows);
+  }, [rows, loaded]);
   const updateCell = (id, key, value) => {
     setRows((prevRows) => {
       const updated = prevRows.map((r) => {
@@ -410,36 +469,60 @@ export default function MedTable() {
         const hasEmpty = updated.some((r) => !(r.col3 || "").trim());
 
         if (!hasEmpty) {
-          updated.push(createEmptyRow(selectedDate));
+          updated.push(
+            createEmptyRow(getDefaultDate(selectedMonth, selectedYear)),
+          );
         }
       }
 
       return updated;
     });
   };
-  const grouped = rows.reduce((acc, row) => {
-    const date = row.colDate || "Без дати";
+  const grouped = rows
+    .filter((row) => row.colDate)
+    .reduce((acc, row) => {
+      const date = row.colDate || "Без дати";
 
-    if (!acc[date]) {
-      acc[date] = [];
-    }
+      if (!acc[date]) {
+        acc[date] = [];
+      }
 
-    acc[date].push(row);
+      acc[date].push(row);
 
-    return acc;
-  }, {});
+      return acc;
+    }, {});
+
+  // const deleteRow = (id) => {
+
+  //   setRows((prevRows) => {
+  //     const updated = prevRows.filter((row) => row.id !== id);
+  //     const finalRows =
+  //       updated.length > 0 ? updated : [createEmptyRow(selectedDate)];
+
+  //     // Зберігаємо одразу після видалення
+  //     saveAllRowsReact(finalRows, selectedDate);
+
+  //     return finalRows;
+  //   });
+  // };
 
   const deleteRow = (id) => {
-    // 2. Оновлення стану
     setRows((prevRows) => {
       const updated = prevRows.filter((row) => row.id !== id);
-      const finalRows =
-        updated.length > 0 ? updated : [createEmptyRow(selectedDate)];
 
-      // Зберігаємо одразу після видалення
-      saveAllRowsReact(finalRows, selectedDate);
+      if (updated.length > 0) {
+        return updated;
+      }
 
-      return finalRows;
+      const now = new Date();
+
+      const isCurrentMonth =
+        selectedMonth === now.getMonth() + 1 &&
+        selectedYear === now.getFullYear();
+
+      return isCurrentMonth
+        ? [createEmptyRow(getDefaultDate(selectedMonth, selectedYear))]
+        : [];
     });
   };
   const rowsToRender = rows;

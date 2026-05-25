@@ -10,7 +10,7 @@ function Form037() {
     document.title = "Форма №037/0";
   }, []);
 
-  localStorage.setItem("dailyData", JSON.stringify([]));
+  // localStorage.setItem("dailyData", JSON.stringify([]));
   const printPage = () => {
     window.print();
   };

@@ -37,6 +37,7 @@ function isInPeriod(dateStr, start, end) {
 }
 
 export function buildSummary(dailyData, startStr, endStr) {
+  console.log("RAW DATA SAMPLE:", dailyData.slice(0, 3));
   const start = startStr ? new Date(startStr) : null;
   if (start) start.setHours(0, 0, 0, 0);
 
@@ -74,9 +75,10 @@ export function buildSummary(dailyData, startStr, endStr) {
   }
 
   dailyData.forEach((row) => {
-    if (!row[3] || !row[3].trim()) return;
-    const patientId = row[0];
-    const date = row[2];
+    console.log(dailyData);
+    if (!row.date) return;
+    const date = row.date;
+    const patientId = row.id;
     if (!date || !isInPeriod(date, start, end)) return;
 
     if (!groupedByDate[date]) {
@@ -122,6 +124,7 @@ export function buildSummary(dailyData, startStr, endStr) {
 
         ToothExtractionCaries: 0,
         ToothExtractionCariesChildren: 0,
+        ToothExtractionCaries42: 0,
         ExtractionParodont: 0,
         ExtractionOrthodonticChildren: 0,
         ExtractionphysiologyChildren: 0,
@@ -160,31 +163,29 @@ export function buildSummary(dailyData, startStr, endStr) {
     }
 
     const day = groupedByDate[date];
-    const age = row[4];
+    const age = row.age;
     const child = isChild(age);
-
-    const patientHadVisit = true;
 
     day.visits++;
 
-    const primary = isPrimary(row[5]);
+    const primary = isPrimary(row.visitType);
     if (primary) {
       day.primaryTotal++;
-      if (row[7] === "село") day.primaryRural++;
+      if (row.residence === "село") day.primaryRural++;
       if (child) day.primaryChildren++;
     }
-    const treatments = [row["10-1"], row["10-2"], row["10-3"]].filter(Boolean);
+    const treatments = (row.procedures || []).filter(Boolean);
     const isPreventiveExam = treatments.some(
       (t) => t === "оглянуто_в_порядку_планової_санації",
     );
 
     const cases = [
-      { diagnosis: row["9-1"], tooth: row["9-1_tooth"] },
-      { diagnosis: row["9-2"], tooth: row["9-2_tooth"] },
+      { diagnosis: row.diagnosis1, tooth: row.tooth1 },
+      { diagnosis: row.diagnosis2, tooth: row.tooth2 },
     ].filter((c) => c.diagnosis && c.tooth);
 
     const needsSanation = cases.length > 0;
-    const isSanatedFromForm = row[12] === "Сан";
+    const isSanatedFromForm = row.sanation === "San";
 
     const hasTreatment = treatments.length > 0;
     const isSanated = treatments.includes("планова_санація");
@@ -217,13 +218,6 @@ export function buildSummary(dailyData, startStr, endStr) {
         case "шинування_зубів":
           hasParodontPatient = true;
           shinuvannyaCount++;
-          break;
-        case "видалення_зуба_карієс":
-          day.ToothExtractionCaries++;
-
-          if (child) {
-            day.ToothExtractionCariesChildren++;
-          }
           break;
 
         case "видалення_зуба_пародонт":
@@ -424,8 +418,7 @@ export function buildSummary(dailyData, startStr, endStr) {
 
           // окремо графа 42 (тільки молочні + ускладнений карієс)
           if (child && isTemporaryTooth && hasComplicatedCaries) {
-            day.ToothExtractionCaries42 =
-              (day.ToothExtractionCaries42 || 0) + 1;
+            day.ToothExtractionCaries42++;
           }
           break;
       }
@@ -436,11 +429,11 @@ export function buildSummary(dailyData, startStr, endStr) {
       day.OperatioImplants +
       day.OperatioOthers;
 
-    const anesthesia = row[11];
+    const anesthesia = row.anesthesia;
     if (anesthesia === "value2") day.anesthesiaLocal++;
     if (anesthesia === "value3") day.anesthesiaGeneral++;
 
-    const uop = parseFloat(row[14]);
+    const uop = parseFloat(row.uop);
     if (!isNaN(uop)) day.uop += uop;
   });
   Object.values(groupedByDate).forEach((day) => {
@@ -454,9 +447,14 @@ export function buildSummary(dailyData, startStr, endStr) {
   const groupedData = Object.values(groupedByDate);
 
   let monthTotal = {};
+
   if (groupedData.length) {
     Object.keys(groupedData[0]).forEach((key) => {
-      monthTotal[key] = typeof groupedData[0][key] === "number" ? 0 : "";
+      if (key === "date") {
+        monthTotal[key] = "Всього";
+      } else {
+        monthTotal[key] = typeof groupedData[0][key] === "number" ? 0 : "";
+      }
     });
 
     groupedData.forEach((day) => {
@@ -466,8 +464,6 @@ export function buildSummary(dailyData, startStr, endStr) {
         }
       });
     });
-
-    monthTotal.date = "Всього";
   }
 
   return { groupedData, monthTotal };
