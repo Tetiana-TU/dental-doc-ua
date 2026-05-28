@@ -6,7 +6,7 @@ import { buildSummary } from "../../../utils/buildSummary";
 function objectToRow1(obj) {
   return [
     obj.date, // Дата
-    "", // Фактично відпрацьовано годин
+    obj.workedHours, // Фактично відпрацьовано годин
     obj.visits, // Кількість відвідувань
     obj.primaryRural, // З них сільських
     `${obj.primaryTotal || 0}/${obj.primaryRural || 0}`, // Кількість первинних
@@ -28,19 +28,19 @@ function objectToRow1(obj) {
     obj.PtChildren, // 21
     obj.depulped, // 22
     obj.PlC, //23
-    "", //24
-    "", //25
+    obj.PlAm, //24
+    obj.PlCC, //25
     obj.PlLC, //26
     `${obj.anesthesiaLocal || 0}/${obj.anesthesiaGeneral || 0}`,
-    obj.medlikparodont, //28
-    obj.mucosaTreatmentChildren, //29
+    obj.parodontTotal, //28
+    obj.parodontChildren, //29
     obj.naplast, //30
-    obj.mucosaTreatment, //31
+    obj.medlikCourseCount, //31
     obj.kuretazh, //32
     obj.klapteva, //33
     obj.shinuvanya, //34
-    obj.mucosaFullCourse,
-    obj.mucosaFullCourseChildren,
+    obj.mucosaFullCourse, //35
+    obj.mucosaFullCourseChildren, //36
   ];
 }
 
@@ -145,7 +145,7 @@ export default function Form039_2_0Page() {
     );
     function cleanRow(row) {
       return row.map((cell) =>
-        cell === 0 || cell === null || cell === undefined ? "" : cell,
+        cell === null || cell === undefined || cell === 0 ? "" : cell,
       );
     }
     const table1 = groupedData.map((obj) => cleanRow(objectToRow1(obj)));
