@@ -608,8 +608,6 @@ export function buildSummary(dailyData, startStr, endStr) {
       });
     });
   }
-  // monthTotal.parodontTotal = parodontPatientsSet.size;
-  // monthTotal.parodontChildren = parodontChildrenSet.size;
 
   return { groupedData, monthTotal };
 }

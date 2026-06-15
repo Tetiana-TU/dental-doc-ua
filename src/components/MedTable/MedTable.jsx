@@ -249,18 +249,6 @@ function createEmptyRow({ day, month, year }) {
     col14: 0,
   };
 }
-// function saveAllRowsReact(rows, date) {
-//   const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
-
-//   if (!archive[date.year]) archive[date.year] = {};
-//   if (!archive[date.year][date.month]) {
-//     archive[date.year][date.month] = {};
-//   }
-
-//   archive[date.year][date.month][date.day] = rows;
-
-//   localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
-// }
 
 export default function MedTable() {
   const now = new Date();
@@ -268,14 +256,10 @@ export default function MedTable() {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
 
-  // const [selectedDate, setSelectedDate] = useState({
-  //   day,
-  //   month,
-  //   year,
-  // });
   const [selectedMonth, setSelectedMonth] = useState(month);
   const [selectedYear, setSelectedYear] = useState(year);
-  const saveAllRowsReact = (rowsToSave) => {
+
+  const saveAllRowsReact = async (rowsToSave) => {
     const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
     const groupedRows = rowsToSave.reduce((acc, row) => {
@@ -294,7 +278,7 @@ export default function MedTable() {
 
       return acc;
     }, {});
-    // оновлюємо тільки потрібні дні
+
     Object.entries(groupedRows).forEach(([year, months]) => {
       if (!archive[year]) archive[year] = {};
 
@@ -308,14 +292,21 @@ export default function MedTable() {
     });
 
     localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
+    try {
+      const token = localStorage.getItem("token");
+      await fetch("http://localhost:3001/api/form037/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rows: rowsToSave }),
+      });
+    } catch (err) {
+      console.error("Save error:", err);
+    }
   };
-  // useEffect(() => {
-  //   setSelectedDate((prev) => ({
-  //     day:  1,
-  //     month: selectedMonth,
-  //     year: selectedYear,
-  //   }));
-  // }, [selectedMonth, selectedYear]);
+
   const [rows, setRows] = useState([]);
   const [modalState, setModalState] = useState({
     open: false,
@@ -386,11 +377,6 @@ export default function MedTable() {
 
     setModalState({ open: true, rowId, field });
   };
-  // useEffect(() => {
-  //   if (!rows.length) return;
-  //   saveAllRowsReact(rows, selectedDate);
-  // }, [rows, selectedDate]);
-
   useEffect(() => {
     const archive = JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
 
@@ -399,7 +385,7 @@ export default function MedTable() {
 
     const usedIds = new Set();
 
-    const allRows = Object.entries(monthData)
+    let allRows = Object.entries(monthData)
       .sort(([a], [b]) => Number(a) - Number(b))
       .flatMap(([day, rows]) =>
         rows.map((row) => {
@@ -414,6 +400,29 @@ export default function MedTable() {
           return { ...row, id };
         }),
       );
+    const now = new Date();
+
+    const isCurrentMonth =
+      selectedMonth === now.getMonth() + 1 &&
+      selectedYear === now.getFullYear();
+
+    if (isCurrentMonth) {
+      const todayDate = `${String(now.getDate()).padStart(2, "0")}.${String(
+        now.getMonth() + 1,
+      ).padStart(2, "0")}.${now.getFullYear()}`;
+
+      const hasTodayRow = allRows.some((row) => row.colDate === todayDate);
+
+      if (!hasTodayRow) {
+        allRows.push(
+          createEmptyRow({
+            day: now.getDate(),
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+          }),
+        );
+      }
+    }
 
     if (allRows.length > 0) {
       setRows(allRows);
@@ -433,10 +442,15 @@ export default function MedTable() {
   }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
-    if (!loaded || rows.length === 0) return;
+    if (!loaded) return;
 
-    saveAllRowsReact(rows);
+    const timeout = setTimeout(() => {
+      saveAllRowsReact(rows);
+    }, 800);
+
+    return () => clearTimeout(timeout);
   }, [rows, loaded]);
+
   const updateCell = (id, key, value) => {
     setRows((prevRows) => {
       const updated = prevRows.map((r) => {

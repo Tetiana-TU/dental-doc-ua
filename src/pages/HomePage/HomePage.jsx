@@ -1,24 +1,32 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import AuthNav from "../../components/AuthNav/AuthNav";
+import RegistrationForm from "../../components/RegistrationForm/RegistrationForm";
+import ModalRegister from "../../components/ModalRegister/ModalRegister";
+import LoginForm from "../../components/LoginForm/LoginForm";
 import css from "./HomePage.module.css";
 
 export default function Home() {
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   useEffect(() => {
     document.title = "dental-doc-ua";
   }, []);
+  useEffect(() => {
+    console.log("Register:", isRegisterOpen);
+    console.log("Login:", isLoginOpen);
+  }, [isRegisterOpen, isLoginOpen]);
   return (
     <div>
-      <header className={css.header}>
-        <nav className={css.nav}>
-          <a href="/">Головна</a>
-          <a href="/about">Про сервіс</a>
-          <a href="/pricing">Тарифи</a>
-          <a href="/login">Вхід</a>
-          <a href="/register" className={css.registerBtn}>
-            Реєстрація
-          </a>
-        </nav>
-      </header>
-
+      <AuthNav
+        onRegisterClick={() => {
+          setIsLoginOpen(false);
+          setIsRegisterOpen(true);
+        }}
+        onLoginClick={() => {
+          setIsRegisterOpen(false);
+          setIsLoginOpen(true);
+        }}
+      />
       <section className={css.hero}>
         <div className={css.heroContent}>
           <h1 className={css.homeTitle}>
@@ -51,6 +59,23 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <ModalRegister
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+      >
+        <RegistrationForm
+          onSuccess={() => {
+            console.log("HOME SUCCESS");
+            setIsRegisterOpen(false); // закрити реєстрацію
+            setIsLoginOpen(true); // відкрити вхід
+          }}
+        />
+      </ModalRegister>
+
+      <ModalRegister isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)}>
+        <LoginForm onSuccess={() => setIsLoginOpen(false)} />
+      </ModalRegister>
     </div>
   );
 }

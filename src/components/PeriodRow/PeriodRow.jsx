@@ -1,16 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useSelector } from "react-redux";
+
 import css from "./PeriodRow.module.css";
 
 export default function PeriodRow({ month, year, setMonth, setYear }) {
   const now = new Date();
-
-  const [doctor, setDoctor] = useState(() => {
-    return localStorage.getItem("doctorName") || "";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("doctorName", doctor);
-  }, [doctor]);
+  const user = localStorage.getItem("doctorName") || "";
 
   const months = [
     "січень",
@@ -65,8 +60,8 @@ export default function PeriodRow({ month, year, setMonth, setYear }) {
         <input
           type="text"
           className={css.doctorInput}
-          value={doctor}
-          onChange={(e) => setDoctor(e.target.value)}
+          value={user}
+          readOnly
           placeholder="Прізвище, ім'я, по-батькові лікаря"
         />
       </div>
