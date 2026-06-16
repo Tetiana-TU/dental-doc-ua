@@ -19,7 +19,7 @@ app.use("/api/doctors", doctorsRoutes);
 app.use("/api/form037", form037Routes);
 app.use("/api/form039", form039Routes);
 app.use(express.static(path.join(__dirname, "../dist")));
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 app.listen(PORT, () => {
