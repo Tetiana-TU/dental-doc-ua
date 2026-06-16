@@ -1,6 +1,7 @@
 import authMiddleware from "../middleware/auth.js";
 import express from "express";
-import pool from "../src/utils/server/db.js";
+import jwt from "jsonwebtoken";
+import pool from "../db.js";
 const router = express.Router();
 router.get("/", (req, res) => {
   res.json({ message: "Doctors API works" });
