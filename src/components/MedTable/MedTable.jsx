@@ -294,7 +294,7 @@ export default function MedTable() {
     localStorage.setItem("dailyDataArchive", JSON.stringify(archive));
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:3001/api/form037/bulk", {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/form037/bulk`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -19,13 +19,16 @@ export default function RegistrationForm({ onSuccess }) {
 
   const handleSubmit = async (values, actions) => {
     try {
-      const res = await fetch("http://localhost:3001/api/doctors/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/doctors/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
         },
-        body: JSON.stringify(values),
-      });
+      );
 
       if (!res.ok) {
         throw new Error("Server error");
