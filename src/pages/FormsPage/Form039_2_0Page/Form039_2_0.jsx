@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import css from "./Form039_2_0.module.css";
 import SummaryControls from "../../../components/SummaryControls/SummaryControls";
-import { buildSummary } from "../../../utils/buildSummary";
+import { buildSummary } from "../../../../server/utils/buildSummary";
 
 function objectToRow1(obj) {
   return [
