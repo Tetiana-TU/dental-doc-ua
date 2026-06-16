@@ -1,6 +1,6 @@
 import authMiddleware from "../middleware/auth.js";
 import express from "express";
-import pool from "../db.js";
+import pool from "../../server/db.js";
 import { buildSummary } from "../utils/buildSummary.js";
 
 const router = express.Router();

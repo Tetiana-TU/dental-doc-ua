@@ -1,5 +1,5 @@
 import express from "express";
-import db from "../db.js";
+import db from "../../server/db";
 const router = express.Router();
 // отримати всі записи
 router.get("/", async (req, res) => {

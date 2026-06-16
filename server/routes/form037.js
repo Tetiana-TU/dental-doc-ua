@@ -1,6 +1,6 @@
 import authMiddleware from "../middleware/auth.js";
 import express from "express";
-import pool from "../src/utils/server/db.js";
+import pool from "../../server/db.js";
 const router = express.Router();
 router.post("/", authMiddleware, async (req, res) => {
   try {
