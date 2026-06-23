@@ -19,6 +19,8 @@ export default function RegistrationForm({ onSuccess }) {
 
   const handleSubmit = async (values, actions) => {
     try {
+      console.log(import.meta.env);
+      console.log("API:", import.meta.env.VITE_API_URL);
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/doctors/register`,
         {
@@ -29,12 +31,13 @@ export default function RegistrationForm({ onSuccess }) {
           body: JSON.stringify(values),
         },
       );
-
+      console.log("STATUS:", res.status);
       if (!res.ok) {
         throw new Error("Server error");
       }
       console.log("1");
       const data = await res.json();
+      console.log("DATA:", data);
       console.log("2 saved doctor:", data);
 
       console.log("3 onSuccess:", onSuccess);

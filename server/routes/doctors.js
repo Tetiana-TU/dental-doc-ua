@@ -8,7 +8,8 @@ router.get("/", (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  console.log("BODY:", req.body);
+  console.log("🔥 REGISTER HIT");
+  console.log(req.body);
   try {
     const { fullName, phone, password } = req.body;
     console.log("VALUES:", fullName, phone, password);
@@ -22,8 +23,8 @@ router.post("/register", async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "DB error" });
+    console.log("DB ERROR:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 router.post("/login", async (req, res) => {
