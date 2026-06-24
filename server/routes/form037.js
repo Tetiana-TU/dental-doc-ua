@@ -99,7 +99,7 @@ router.post("/bulk", authMiddleware, async (req, res) => {
             row.col6,
             row.col9_1,
             row.col9_2,
-            JSON.stringify([row.col10_1, row.col10_2, row.col10_3]),
+            [row.col10_1, row.col10_2, row.col10_3],
             row.col11,
             null,
             false,
@@ -132,12 +132,15 @@ router.post("/bulk", authMiddleware, async (req, res) => {
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const doctorId = req.doctor.id;
+    const { month, year } = req.query;
 
     const result = await pool.query(
       `SELECT * FROM form_037
        WHERE doctor_id = $1
+       AND EXTRACT(MONTH FROM date::date) = $2
+AND EXTRACT(YEAR FROM date::date) = $3
        ORDER BY date DESC`,
-      [doctorId],
+      [doctorId, month, year],
     );
 
     res.json(result.rows);

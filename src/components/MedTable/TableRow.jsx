@@ -104,8 +104,11 @@ export default function TableRow({
             value={row.col9_1 || ""}
             readOnly
             placeholder="Оберіть діагноз"
+            data-row={row.id}
+            data-col="col9_1"
             onClick={() => openDiagnosisModal(row.id, "col9_1", row.col9_1)}
             onKeyDown={(e) => {
+              handleKeyDown(e, "col9_1");
               if (e.key === "Delete" || e.key === "Backspace") {
                 e.stopPropagation(); // щоб не видалився рядок
                 updateCell(row.id, "col9_1", "");
@@ -118,6 +121,9 @@ export default function TableRow({
             value={row.col9_1_tooth}
             onChange={(e) => updateCell(row.id, "col9_1_tooth", e.target.value)}
             placeholder="№ зуба"
+            onKeyDown={(e) => handleKeyDown(e, "col9_1_tooth")}
+            data-row={row.id}
+            data-col="col9_1_tooth"
           />
         </div>
       </td>
@@ -130,8 +136,11 @@ export default function TableRow({
             value={row.col9_2 || ""}
             readOnly
             placeholder="Оберіть діагноз"
+            data-row={row.id}
+            data-col="col9_2"
             onClick={() => openDiagnosisModal(row.id, "col9_2", row.col9_2)}
             onKeyDown={(e) => {
+              handleKeyDown(e, "col9_2");
               if (e.key === "Delete" || e.key === "Backspace") {
                 e.stopPropagation(); // щоб не видалився рядок
                 updateCell(row.id, "col9_2", "");
@@ -144,6 +153,9 @@ export default function TableRow({
             value={row.col9_2_tooth}
             onChange={(e) => updateCell(row.id, "col9_2_tooth", e.target.value)}
             placeholder="№ зуба"
+            onKeyDown={(e) => handleKeyDown(e, "col9_2_tooth")}
+            data-row={row.id}
+            data-col="col9_2_tooth"
           />
         </div>
       </td>
