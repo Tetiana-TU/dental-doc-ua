@@ -8,11 +8,18 @@ router.post("/generate", authMiddleware, async (req, res) => {
   try {
     const doctorId = req.doctor.id;
     const { startDate, endDate } = req.body;
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "startDate і endDate обов'язкові" });
+    }
+
+    await pool.query("BEGIN");
 
     const result = await pool.query(
       `SELECT * FROM form_037
        WHERE doctor_id = $1
-       AND date BETWEEN $2 AND $3`,
+       AND date >= $2 AND date <= $3`,
       [doctorId, startDate, endDate],
     );
 
@@ -24,10 +31,12 @@ router.post("/generate", authMiddleware, async (req, res) => {
        RETURNING *`,
       [doctorId, startDate, endDate, summary],
     );
-
+    await pool.query("COMMIT");
     res.json(saved.rows[0]);
   } catch (err) {
-    res.status(500).json({ message: "Error generating report" });
+    await pool.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ message: "Помилка генерації звіту" });
   }
 });
 export default router;

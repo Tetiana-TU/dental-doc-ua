@@ -189,9 +189,9 @@ export default function TableRow({
           data-row={row.id}
           data-col="col11"
         >
-          <option value="value1">Без</option>
-          <option value="value2">Місц</option>
-          <option value="value3">Заг</option>
+          <option value="0">Без</option>
+          <option value="1">Місц</option>
+          <option value="2">Заг</option>
         </select>
       </td>
 

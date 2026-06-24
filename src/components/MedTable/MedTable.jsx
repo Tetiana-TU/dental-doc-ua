@@ -205,7 +205,7 @@ const procedurePoints = {
   пломб_корен_кан_2: 3,
   пломб_корен_кан_3: 4,
 };
-const anesthesiaPoints = { value1: 0, value2: 0.5, value3: 1 };
+const anesthesiaPoints = { 0: 0, 1: 0.5, 2: 1 };
 
 // function getCurrentDate() {
 //   const now = new Date();
@@ -289,13 +289,20 @@ export default function MedTable() {
       );
 
       const data = await res.json();
+      const now = new Date();
+
+      const day =
+        selectedMonth === now.getMonth() + 1 &&
+        selectedYear === now.getFullYear()
+          ? now.getDate()
+          : 1;
 
       setRows(
         data.length
           ? data
           : [
               createEmptyRow({
-                day: 1,
+                day,
                 month: selectedMonth,
                 year: selectedYear,
               }),
