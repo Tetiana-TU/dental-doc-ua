@@ -94,7 +94,7 @@ router.post("/bulk", authMiddleware, async (req, res) => {
             row.colDate,
             row.col2,
             row.col3,
-            row.col4,
+            row.col4 ? Number(row.col4) : null,
             row.col5,
             row.col6,
             row.col9_1,

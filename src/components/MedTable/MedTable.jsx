@@ -469,12 +469,24 @@ export default function MedTable() {
 
     const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
     if (!arrowKeys.includes(e.key)) return;
-
+    // Не перехоплюємо стрілку всередині тексту
+    if (
+      e.target instanceof HTMLInputElement &&
+      (e.key === "ArrowLeft" || e.key === "ArrowRight")
+    ) {
+      if (
+        (e.key === "ArrowLeft" && e.target.selectionStart > 0) ||
+        (e.key === "ArrowRight" &&
+          e.target.selectionStart < e.target.value.length)
+      ) {
+        return;
+      }
+    }
     e.preventDefault();
 
     const rowIndex = rows.findIndex((r) => r.id === rowId);
     const colKeys = [
-      "col1",
+      // "col1",
       "col2",
       "col3",
       "col4",
@@ -492,7 +504,7 @@ export default function MedTable() {
       "col11",
       "col12",
       "col13",
-      "col14",
+      // "col14",
     ];
     const cellIndex = colKeys.indexOf(cellKey);
 
