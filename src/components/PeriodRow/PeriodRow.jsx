@@ -1,6 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useSelector } from "react-redux";
-
+import React from "react";
 import css from "./PeriodRow.module.css";
 
 export default function PeriodRow({ month, year, setMonth, setYear }) {

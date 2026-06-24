@@ -112,13 +112,21 @@ router.post("/bulk", authMiddleware, async (req, res) => {
       res.json({ message: "Bulk saved successfully" });
     } catch (err) {
       await client.query("ROLLBACK");
+
+      console.error("POSTGRES ERROR:");
+      console.error(err);
+      console.error(err.message);
+
       throw err;
     } finally {
       client.release();
     }
   } catch (err) {
+    console.error("BULK ERROR:");
     console.error(err);
-    res.status(500).json({ message: "Bulk insert error" });
+    console.error(err.message);
+
+    res.status(500).json({ message: err.message });
   }
 });
 router.get("/", authMiddleware, async (req, res) => {

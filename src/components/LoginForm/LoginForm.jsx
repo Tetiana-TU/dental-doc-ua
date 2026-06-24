@@ -28,6 +28,14 @@ export default function LoginForm({ onSuccess }) {
 
       const data = await res.json();
 
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      if (data.doctor?.full_name) {
+        localStorage.setItem("doctorName", data.doctor.full_name);
+      }
+
       console.log("Logged in:", data);
 
       actions.resetForm();
@@ -35,9 +43,7 @@ export default function LoginForm({ onSuccess }) {
       if (onSuccess) {
         onSuccess();
       }
-      navigate("/");
-      // тут потім буде перехід на форму 037
-      // navigate("/forma-037/0");
+      navigate("/forma-037/0");
     } catch (error) {
       console.error("Login error:", error);
       alert(error.message);
