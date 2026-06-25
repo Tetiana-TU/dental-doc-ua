@@ -248,7 +248,7 @@ function createEmptyRow({ day, month, year }) {
     col10_1: "",
     col10_2: "",
     col10_3: "",
-    col11: "value1",
+    col11: "0",
     col12: "",
     col13: "",
     col14: 0,

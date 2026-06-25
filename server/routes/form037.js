@@ -84,8 +84,25 @@ router.post("/bulk", authMiddleware, async (req, res) => {
 
       for (const row of rows) {
         const sqlDate = toSqlDate(row.colDate);
+
         console.log("row.colDate =", row.colDate);
         console.log("sqlDate =", sqlDate);
+        console.log([
+          doctorId,
+          sqlDate,
+          row.col2,
+          row.col3,
+          row.col4 ? Number(row.col4) : null,
+          row.col5,
+          row.col6,
+          row.col9_1,
+          row.col9_2,
+          [row.col10_1, row.col10_2, row.col10_3],
+          row.col11,
+          null,
+          false,
+          row.col14,
+        ]);
         await client.query(
           `INSERT INTO form_037 (
             doctor_id,
@@ -115,7 +132,7 @@ router.post("/bulk", authMiddleware, async (req, res) => {
             row.col9_1,
             row.col9_2,
             [row.col10_1, row.col10_2, row.col10_3],
-            row.col11,
+            Number(row.col11),
             null,
             false,
             row.col14,
