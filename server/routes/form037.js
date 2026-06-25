@@ -83,6 +83,19 @@ router.post("/bulk", authMiddleware, async (req, res) => {
       await client.query("BEGIN");
 
       for (const row of rows) {
+        if (!row || !row.colDate || !row.col2) continue;
+        const isEmpty = !row.colDate && !row.col3 && !row.col2;
+
+        if (isEmpty) continue;
+        const unique = new Map();
+
+        for (const row of rows) {
+          const key = `${row.colDate}_${row.col2}_${row.col3}`;
+
+          if (unique.has(key)) continue;
+
+          unique.set(key, row);
+        }
         const sqlDate = toSqlDate(row.colDate);
 
         console.log("row.colDate =", row.colDate);
