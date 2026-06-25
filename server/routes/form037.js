@@ -1,6 +1,18 @@
 import authMiddleware from "../middleware/auth.js";
 import express from "express";
 import pool from "../../server/db.js";
+function toSqlDate(value) {
+  if (!value) return null;
+
+  const parts = value.split(".");
+
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return `${year}-${month}-${day}`;
+  }
+
+  return value;
+}
 const router = express.Router();
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -21,7 +33,7 @@ router.post("/", authMiddleware, async (req, res) => {
       sanation,
       uop,
     } = req.body;
-
+    const sqlDate = toSqlDate(date);
     const result = await pool.query(
       `INSERT INTO form_037 (
         doctor_id, date, visit_time,
@@ -34,7 +46,7 @@ router.post("/", authMiddleware, async (req, res) => {
       RETURNING *`,
       [
         doctorId,
-        date,
+        sqlDate,
         visit_time,
         patient_name,
         age,
@@ -71,6 +83,9 @@ router.post("/bulk", authMiddleware, async (req, res) => {
       await client.query("BEGIN");
 
       for (const row of rows) {
+        const sqlDate = toSqlDate(row.colDate);
+        console.log("row.colDate =", row.colDate);
+        console.log("sqlDate =", sqlDate);
         await client.query(
           `INSERT INTO form_037 (
             doctor_id,
@@ -91,7 +106,7 @@ router.post("/bulk", authMiddleware, async (req, res) => {
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
           [
             doctorId,
-            row.colDate,
+            sqlDate,
             row.col2,
             row.col3,
             row.col4 ? Number(row.col4) : null,
