@@ -132,7 +132,7 @@ router.post("/bulk", authMiddleware, async (req, res) => {
             row.col9_1,
             row.col9_2,
             [row.col10_1, row.col10_2, row.col10_3],
-            Number(row.col11),
+            row.col11,
             null,
             false,
             row.col14,
