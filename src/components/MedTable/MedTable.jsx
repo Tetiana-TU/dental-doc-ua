@@ -1,9 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import css from "./MedTable.module.css";
 import TableRow from "./TableRow";
 import PeriodRow from "../PeriodRow/PeriodRow";
 import icdData from "./../../data/icd11.json";
+function formatDate(dateStr) {
+  if (!dateStr) return null;
 
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${day}.${month}.${year}`;
+}
 function DiagnosisTree({
   data,
   onSelect,
@@ -207,33 +218,18 @@ const procedurePoints = {
 };
 const anesthesiaPoints = { 0: 0, 1: 0.5, 2: 1 };
 
-// function getCurrentDate() {
-//   const now = new Date();
-//   return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1).toString().padStart(2, "0")}.${now.getFullYear()}`;
-// }
-// function getDefaultDate(selectedMonth, selectedYear) {
-//   const now = new Date();
-
-//   const isCurrentMonth =
-//     selectedMonth === now.getMonth() + 1 && selectedYear === now.getFullYear();
-
-//   return {
-//     day: isCurrentMonth ? now.getDate() : 1,
-//     month: selectedMonth,
-//     year: selectedYear,
-//   };
-// }
-function createEmptyRow({ day, month, year }) {
+function createEmptyRow({ day, month, year, patientId }) {
   const now = new Date();
 
   // const date = `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
 
   return {
     id: crypto.randomUUID(),
-    colDate: `${String(day).padStart(2, "0")}.${String(month).padStart(
-      2,
-      "0",
-    )}.${year}`,
+    patient_id: patientId,
+    colDate:
+      day && month && year
+        ? `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`
+        : null,
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
     col4: "",
@@ -290,7 +286,25 @@ export default function MedTable() {
 
       const data = await res.json();
       const now = new Date();
+      const newPatientId = crypto.randomUUID();
 
+      const normalized = data.map((r) => ({
+        id: r.id ?? r._id ?? crypto.randomUUID(),
+        patient_id: r.patient_id,
+        colDate: r.date ? formatDate(r.date) : null,
+        col2: r.visit_time || "",
+        col3: r.patient_name || "",
+        col4: r.age || "",
+        col5: r.gender || "",
+        col6: r.visit_type || "",
+        col9_1: r.diagnosis_1 || "",
+        col9_2: r.diagnosis_2 || "",
+        col10_1: Array.isArray(r.procedures) ? r.procedures[0] : "",
+        col10_2: Array.isArray(r.procedures) ? r.procedures[1] : "",
+        col10_3: Array.isArray(r.procedures) ? r.procedures[2] : "",
+        col11: r.anesthesia_local ?? "0",
+        col14: r.uop || 0,
+      }));
       const day =
         selectedMonth === now.getMonth() + 1 &&
         selectedYear === now.getFullYear()
@@ -298,13 +312,14 @@ export default function MedTable() {
           : 1;
 
       setRows(
-        data.length
-          ? data
+        normalized.length
+          ? normalized
           : [
               createEmptyRow({
                 day,
                 month: selectedMonth,
                 year: selectedYear,
+                patientId: newPatientId,
               }),
             ],
       );
@@ -315,30 +330,38 @@ export default function MedTable() {
     load();
   }, [selectedMonth, selectedYear]);
 
-  useEffect(() => {
-    if (!loaded) return;
+  const saveRow = async (row) => {
+    try {
+      console.log("saveRow()");
+      console.log("Saving row:", row);
 
-    const t = setTimeout(async () => {
       const token = localStorage.getItem("token");
 
-      try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/form037/bulk`, {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/form037/row`,
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ rows }),
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }, 800);
+          body: JSON.stringify(row),
+        },
+      );
 
-    return () => clearTimeout(t);
-  }, [rows, loaded]);
+      console.log("STATUS:", res.status);
 
+      const data = await res.json();
+      console.log("RESPONSE:", data);
+    } catch (err) {
+      console.error("FETCH ERROR:", err);
+    }
+  };
   const updateCell = (id, key, value) => {
+    console.log("updateCell", id, key, value);
+    console.log("UPDATE", id, key, value);
+    let changedRow = null;
+
     setRows((prev) => {
       const updated = prev.map((r) => {
         if (r.id !== id) return r;
@@ -354,6 +377,7 @@ export default function MedTable() {
 
           newRow.col14 = sum;
         }
+        saveRow(newRow);
 
         return newRow;
       });
@@ -362,12 +386,14 @@ export default function MedTable() {
 
       if (last?.col3?.trim()) {
         const hasEmpty = updated.some((r) => !r.col3?.trim());
+
         if (!hasEmpty) {
           updated.push(
             createEmptyRow({
               day: now.getDate(),
               month: selectedMonth,
               year: selectedYear,
+              patientId: crypto.randomUUID(),
             }),
           );
         }
@@ -376,6 +402,7 @@ export default function MedTable() {
       return updated;
     });
   };
+
   const deleteRow = (id) => {
     setRows((prev) => {
       const filtered = prev.filter((r) => r.id !== id);
@@ -386,6 +413,7 @@ export default function MedTable() {
               day: 1,
               month: selectedMonth,
               year: selectedYear,
+              patientId: crypto.randomUUID(),
             }),
           ];
     });
@@ -428,14 +456,15 @@ export default function MedTable() {
 
     setModalState({ open: true, rowId, field });
   };
-
+  console.log(rows);
   const grouped = rows.reduce((acc, row) => {
-    const date = row.colDate;
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(row);
+    if (!row.colDate) return acc;
+
+    if (!acc[row.colDate]) acc[row.colDate] = [];
+    acc[row.colDate].push(row);
+
     return acc;
   }, {});
-
   // const saveAllRowsReact = async (rowsToSave) => {
   //   try {
   //     const token = localStorage.getItem("token");

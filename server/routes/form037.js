@@ -13,6 +13,11 @@ function toSqlDate(value) {
 
   return value;
 }
+function formatDate(sqlDate) {
+  if (!sqlDate) return null;
+  const d = new Date(sqlDate);
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
 const router = express.Router();
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -68,109 +73,78 @@ router.post("/", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "DB error" });
   }
 });
-router.post("/bulk", authMiddleware, async (req, res) => {
+router.post("/row", authMiddleware, async (req, res) => {
+  console.log("🔥 POST /api/form037/row");
+
   try {
     const doctorId = req.doctor.id;
-    const { rows } = req.body;
+    const row = req.body;
 
-    if (!rows || !Array.isArray(rows)) {
-      return res.status(400).json({ message: "No rows provided" });
-    }
+    const sqlDate = toSqlDate(row.colDate);
 
-    const client = await pool.connect();
+    await pool.query(
+      `
+      INSERT INTO form_037 (
+        doctor_id,
+        patient_id,
+        date,
+        visit_time,
+        patient_name,
+        age,
+        gender,
+        visit_type,
+        diagnosis_1,
+        diagnosis_2,
+        procedures,
+        anesthesia_local,
+        anesthesia_general,
+        sanation,
+        uop
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+      )
 
-    try {
-      await client.query("BEGIN");
+      ON CONFLICT (patient_id)
 
-      for (const row of rows) {
-        if (!row || !row.colDate || !row.col2) continue;
-        const isEmpty = !row.colDate && !row.col3 && !row.col2;
+      DO UPDATE SET
+        doctor_id = EXCLUDED.doctor_id,
+        date = EXCLUDED.date,
+        visit_time = EXCLUDED.visit_time,
+        patient_name = EXCLUDED.patient_name,
+        age = EXCLUDED.age,
+        gender = EXCLUDED.gender,
+        visit_type = EXCLUDED.visit_type,
+        diagnosis_1 = EXCLUDED.diagnosis_1,
+        diagnosis_2 = EXCLUDED.diagnosis_2,
+        procedures = EXCLUDED.procedures,
+        anesthesia_local = EXCLUDED.anesthesia_local,
+        anesthesia_general = EXCLUDED.anesthesia_general,
+        sanation = EXCLUDED.sanation,
+        uop = EXCLUDED.uop
+      `,
+      [
+        doctorId,
+        row.patient_id,
+        sqlDate,
+        row.col2,
+        row.col3,
+        row.col4 ? Number(row.col4) : null,
+        row.col5,
+        row.col6,
+        row.col9_1,
+        row.col9_2,
+        [row.col10_1, row.col10_2, row.col10_3],
+        row.col11,
+        null,
+        false,
+        row.col14,
+      ],
+    );
 
-        if (isEmpty) continue;
-        const unique = new Map();
-
-        for (const row of rows) {
-          const key = `${row.colDate}_${row.col2}_${row.col3}`;
-
-          if (unique.has(key)) continue;
-
-          unique.set(key, row);
-        }
-        const sqlDate = toSqlDate(row.colDate);
-
-        console.log("row.colDate =", row.colDate);
-        console.log("sqlDate =", sqlDate);
-        console.log([
-          doctorId,
-          sqlDate,
-          row.col2,
-          row.col3,
-          row.col4 ? Number(row.col4) : null,
-          row.col5,
-          row.col6,
-          row.col9_1,
-          row.col9_2,
-          [row.col10_1, row.col10_2, row.col10_3],
-          row.col11,
-          null,
-          false,
-          row.col14,
-        ]);
-        await client.query(
-          `INSERT INTO form_037 (
-            doctor_id,
-            date,
-            visit_time,
-            patient_name,
-            age,
-            gender,
-            visit_type,
-            diagnosis_1,
-            diagnosis_2,
-            procedures,
-            anesthesia_local,
-            anesthesia_general,
-            sanation,
-            uop
-          )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-          [
-            doctorId,
-            sqlDate,
-            row.col2,
-            row.col3,
-            row.col4 ? Number(row.col4) : null,
-            row.col5,
-            row.col6,
-            row.col9_1,
-            row.col9_2,
-            [row.col10_1, row.col10_2, row.col10_3],
-            row.col11,
-            null,
-            false,
-            row.col14,
-          ],
-        );
-      }
-
-      await client.query("COMMIT");
-      res.json({ message: "Bulk saved successfully" });
-    } catch (err) {
-      await client.query("ROLLBACK");
-
-      console.error("POSTGRES ERROR:");
-      console.error(err);
-      console.error(err.message);
-
-      throw err;
-    } finally {
-      client.release();
-    }
+    res.json({ ok: true });
   } catch (err) {
-    console.error("BULK ERROR:");
     console.error(err);
-    console.error(err.message);
-
     res.status(500).json({ message: err.message });
   }
 });
