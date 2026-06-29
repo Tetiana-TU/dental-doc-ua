@@ -35,7 +35,7 @@ export default function LoginForm({ onSuccess }) {
       if (data.doctor?.full_name) {
         localStorage.setItem("doctorName", data.doctor.full_name);
       }
-
+      window.location.href = "/";
       console.log("Logged in:", data);
 
       actions.resetForm();
@@ -43,7 +43,6 @@ export default function LoginForm({ onSuccess }) {
       if (onSuccess) {
         onSuccess();
       }
-      navigate("/forma-037/0");
     } catch (error) {
       console.error("Login error:", error);
       alert(error.message);

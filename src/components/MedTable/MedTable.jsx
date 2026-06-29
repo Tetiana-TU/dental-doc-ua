@@ -3,10 +3,10 @@ import css from "./MedTable.module.css";
 import TableRow from "./TableRow";
 import PeriodRow from "../PeriodRow/PeriodRow";
 import icdData from "./../../data/icd11.json";
-function formatDate(dateStr) {
-  if (!dateStr) return null;
+function formatDate(value) {
+  if (!value) return null;
 
-  const d = new Date(dateStr);
+  const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
 
   const day = String(d.getDate()).padStart(2, "0");
@@ -15,6 +15,7 @@ function formatDate(dateStr) {
 
   return `${day}.${month}.${year}`;
 }
+
 function DiagnosisTree({
   data,
   onSelect,
@@ -226,10 +227,7 @@ function createEmptyRow({ day, month, year, patientId }) {
   return {
     id: crypto.randomUUID(),
     patient_id: patientId,
-    colDate:
-      day && month && year
-        ? `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`
-        : null,
+    colDate: new Date().toLocaleDateString("uk-UA"),
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
     col4: "",
@@ -285,44 +283,93 @@ export default function MedTable() {
       );
 
       const data = await res.json();
+      console.log("DATA FROM API:", data);
       const now = new Date();
       const newPatientId = crypto.randomUUID();
 
-      const normalized = data.map((r) => ({
-        id: r.id ?? r._id ?? crypto.randomUUID(),
-        patient_id: r.patient_id,
-        colDate: r.date ? formatDate(r.date) : null,
-        col2: r.visit_time || "",
-        col3: r.patient_name || "",
-        col4: r.age || "",
-        col5: r.gender || "",
-        col6: r.visit_type || "",
-        col9_1: r.diagnosis_1 || "",
-        col9_2: r.diagnosis_2 || "",
-        col10_1: Array.isArray(r.procedures) ? r.procedures[0] : "",
-        col10_2: Array.isArray(r.procedures) ? r.procedures[1] : "",
-        col10_3: Array.isArray(r.procedures) ? r.procedures[2] : "",
-        col11: r.anesthesia_local ?? "0",
-        col14: r.uop || 0,
-      }));
+      const normalized = data.map((r) => {
+        const proc = r.procedures ? JSON.parse(r.procedures) : [];
+
+        return {
+          id: r.id ?? r._id ?? crypto.randomUUID(),
+          patient_id: r.patient_id,
+          colDate: formatDate(r.date),
+          col2: r.visit_time ? r.visit_time.slice(0, 5) : "",
+          col3: r.patient_name || "",
+          col4: r.age || "",
+          col5: r.gender || "",
+          col6: r.visit_type || "",
+          col9_1: r.diagnosis_1 || "",
+          col9_2: r.diagnosis_2 || "",
+
+          col10_1: proc[0] || "",
+          col10_2: proc[1] || "",
+          col10_3: proc[2] || "",
+
+          col11: r.anesthesia ?? "0",
+          col12: r.sanation ?? "",
+          col13: r.sanation_plan ?? "",
+          col14: r.uop || 0,
+        };
+      });
       const day =
         selectedMonth === now.getMonth() + 1 &&
         selectedYear === now.getFullYear()
           ? now.getDate()
           : 1;
 
-      setRows(
-        normalized.length
-          ? normalized
-          : [
-              createEmptyRow({
-                day,
-                month: selectedMonth,
-                year: selectedYear,
-                patientId: newPatientId,
-              }),
-            ],
-      );
+      const today =
+        `${String(now.getDate()).padStart(2, "0")}.` +
+        `${String(selectedMonth).padStart(2, "0")}.` +
+        `${selectedYear}`;
+
+      let resultRows = [...normalized].sort((a, b) => {
+        const dateA = new Date(a.colDate);
+        const dateB = new Date(b.colDate);
+
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateA - dateB;
+        }
+
+        return (a.col2 || "").localeCompare(b.col2 || "");
+      });
+
+      // Якщо відкритий поточний місяць
+      if (
+        selectedMonth === now.getMonth() + 1 &&
+        selectedYear === now.getFullYear()
+      ) {
+        const hasTodayEmptyRow = resultRows.some(
+          (r) => r.colDate === today && !r.col3?.trim(),
+        );
+
+        // якщо немає порожнього рядка за сьогодні — додаємо
+        if (!hasTodayEmptyRow) {
+          resultRows.push(
+            createEmptyRow({
+              day: now.getDate(),
+              month: selectedMonth,
+              year: selectedYear,
+              patientId: crypto.randomUUID(),
+            }),
+          );
+        }
+      }
+
+      // якщо записів взагалі немає
+      if (resultRows.length === 0) {
+        resultRows.push(
+          createEmptyRow({
+            day,
+            month: selectedMonth,
+            year: selectedYear,
+            patientId: crypto.randomUUID(),
+          }),
+        );
+      }
+
+      setRows(resultRows);
+      console.log("RESULT ROWS:", resultRows);
 
       setLoaded(true);
     };
@@ -345,7 +392,24 @@ export default function MedTable() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(row),
+          body: JSON.stringify({
+            patient_id: row.patientId || row.patient_id,
+            date: row.colDate,
+            visit_time: row.col2,
+            patient_name: row.col3,
+            age: row.col4,
+            gender: row.col5,
+            visit_type: row.col6,
+            diagnosis_1: row.col9_1,
+            diagnosis_2: row.col9_2,
+            procedures: [row.col10_1, row.col10_2, row.col10_3],
+            anesthesia: row.col11,
+
+            sanation: row.col12,
+            sanation_plan: row.col13,
+
+            uop: row.col14,
+          }),
         },
       );
 
@@ -358,16 +422,13 @@ export default function MedTable() {
     }
   };
   const updateCell = (id, key, value) => {
-    console.log("updateCell", id, key, value);
-    console.log("UPDATE", id, key, value);
-    let changedRow = null;
-
     setRows((prev) => {
       const updated = prev.map((r) => {
         if (r.id !== id) return r;
 
         const newRow = { ...r, [key]: value };
 
+        // Рахуємо суму балів УОП
         if (["col10_1", "col10_2", "col10_3", "col11"].includes(key)) {
           const sum =
             ["col10_1", "col10_2", "col10_3"].reduce(
@@ -377,22 +438,20 @@ export default function MedTable() {
 
           newRow.col14 = sum;
         }
-        saveRow(newRow);
 
+        // changedRow = newRow; // Запоминаємо цей рядок для відправки на бекенд
         return newRow;
       });
-
       const last = updated[updated.length - 1];
-
       if (last?.col3?.trim()) {
         const hasEmpty = updated.some((r) => !r.col3?.trim());
-
         if (!hasEmpty) {
+          const currentDate = new Date();
           updated.push(
             createEmptyRow({
-              day: now.getDate(),
-              month: selectedMonth,
-              year: selectedYear,
+              day: currentDate.getDate(),
+              month: currentDate.getMonth() + 1,
+              year: currentDate.getFullYear(),
               patientId: crypto.randomUUID(),
             }),
           );
@@ -401,6 +460,11 @@ export default function MedTable() {
 
       return updated;
     });
+
+    // 🔥 ОСЬ ЦЕЙ КРИТИЧНИЙ РЯДОК: якщо рядок змінився, відправляємо його в базу!
+    // if (changedRow) {
+    //   saveRow(changedRow);
+    // }
   };
 
   const deleteRow = (id) => {
@@ -460,27 +524,13 @@ export default function MedTable() {
   const grouped = rows.reduce((acc, row) => {
     if (!row.colDate) return acc;
 
-    if (!acc[row.colDate]) acc[row.colDate] = [];
-    acc[row.colDate].push(row);
+    const key = row.colDate;
+
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(row);
 
     return acc;
   }, {});
-  // const saveAllRowsReact = async (rowsToSave) => {
-  //   try {
-  //     const token = localStorage.getItem("token");
-
-  //     await fetch(`${import.meta.env.VITE_API_URL}/api/form037/bulk`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: JSON.stringify({ rows: rowsToSave }),
-  //     });
-  //   } catch (err) {
-  //     console.error("Save error:", err);
-  //   }
-  // };
 
   function buildOpenNodesFromPath(path) {
     const open = {};
@@ -681,53 +731,63 @@ export default function MedTable() {
           {(() => {
             const rowsWithDailyTotals = [];
 
-            Object.entries(grouped).forEach(([date, dayRows]) => {
-              let dailySum = 0;
+            Object.entries(grouped)
+              .sort(([a], [b]) => {
+                const toDate = (d) => {
+                  const [day, month, year] = d.split(".");
+                  return new Date(`${year}-${month}-${day}`);
+                };
 
-              // заголовок дня
-              rowsWithDailyTotals.push(
-                <tr key={`date-${date}`}>
-                  <td
-                    colSpan="17"
-                    style={{ fontWeight: "bold", textAlign: "center" }}
-                  >
-                    {date}
-                  </td>
-                </tr>,
-              );
+                return toDate(a) - toDate(b);
+              })
+              .forEach(([date, dayRows]) => {
+                let dailySum = 0;
 
-              // рядки пацієнтів
-              dayRows.forEach((row, index) => {
-                dailySum += Number(row.col14) || 0;
-
+                // заголовок дня
                 rowsWithDailyTotals.push(
-                  <TableRow
-                    key={`${row.id}-${index}`}
-                    row={row}
-                    rowNumber={index + 1}
-                    updateCell={updateCell}
-                    deleteRow={() => deleteRow(row.id)}
-                    procedureOptions={procedureOptions}
-                    openDiagnosisModal={openDiagnosisModal}
-                    onKeyDownCustom={(e, cellKey) =>
-                      handleKeyDown(e, row.id, cellKey)
-                    }
-                  />,
+                  <tr key={`date-${date}`}>
+                    <td
+                      colSpan="17"
+                      style={{ fontWeight: "bold", textAlign: "center" }}
+                    >
+                      {date}
+                    </td>
+                  </tr>,
+                );
+
+                // рядки пацієнтів
+                dayRows.forEach((row, index) => {
+                  dailySum += Number(row.col14) || 0;
+
+                  rowsWithDailyTotals.push(
+                    <TableRow
+                      key={`${row.id}-${index}`}
+                      row={row}
+                      rowNumber={index + 1}
+                      updateCell={updateCell}
+                      deleteRow={() => deleteRow(row.id)}
+                      procedureOptions={procedureOptions}
+                      openDiagnosisModal={openDiagnosisModal}
+                      onKeyDownCustom={(e, cellKey) =>
+                        handleKeyDown(e, row.id, cellKey)
+                      }
+                      onRowBlur={() => saveRow(row)}
+                    />,
+                  );
+                });
+
+                // підсумок за день
+                rowsWithDailyTotals.push(
+                  <tr key={`total-${date}`} className={css.totalRow}>
+                    {Array.from({ length: 16 }).map((_, idx) => (
+                      <td key={idx}></td>
+                    ))}
+                    <td style={{ fontWeight: "bold", textAlign: "center" }}>
+                      {dailySum.toFixed(2)}
+                    </td>
+                  </tr>,
                 );
               });
-
-              // підсумок за день
-              rowsWithDailyTotals.push(
-                <tr key={`total-${date}`} className={css.totalRow}>
-                  {Array.from({ length: 16 }).map((_, idx) => (
-                    <td key={idx}></td>
-                  ))}
-                  <td style={{ fontWeight: "bold", textAlign: "center" }}>
-                    {dailySum.toFixed(2)}
-                  </td>
-                </tr>,
-              );
-            });
 
             // місячний підсумок
             const monthTotal = rows.reduce(

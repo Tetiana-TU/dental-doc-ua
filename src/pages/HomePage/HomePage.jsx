@@ -4,17 +4,29 @@ import RegistrationForm from "../../components/RegistrationForm/RegistrationForm
 import ModalRegister from "../../components/ModalRegister/ModalRegister";
 import LoginForm from "../../components/LoginForm/LoginForm";
 import css from "./HomePage.module.css";
-
+import { useNavigate } from "react-router-dom";
 export default function Home() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [doctorName, setDoctorName] = useState("");
+  const navigate = useNavigate();
   useEffect(() => {
     document.title = "dental-doc-ua";
   }, []);
+
+  useEffect(() => {
+    const name = localStorage.getItem("doctorName");
+
+    if (name) {
+      setDoctorName(name);
+    }
+  }, []);
+
   useEffect(() => {
     console.log("Register:", isRegisterOpen);
     console.log("Login:", isLoginOpen);
   }, [isRegisterOpen, isLoginOpen]);
+
   return (
     <div>
       <AuthNav
@@ -37,25 +49,21 @@ export default function Home() {
             Ведення форми 037/0 та автоматичне формування звітів 039-2/0
           </p>
           <div className={css.links}>
-            <a
+            <button
               className={css.card}
-              href="/forma-037/0"
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => navigate("/forma-037/0")}
             >
               <h3>Форма №037/0</h3>
               <p>Щоденний облік пацієнтів та процедур</p>
-            </a>
+            </button>
 
-            <a
+            <button
               className={`${css.card} ${css.mt}`}
-              href="/forma-039_2_0"
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => navigate("/forma-039_2_0")}
             >
               <h3>Форма №039-2/0</h3>
               <p>Автоматичне формування щоденного звіту</p>
-            </a>
+            </button>
           </div>
         </div>
       </section>
