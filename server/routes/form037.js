@@ -1,31 +1,21 @@
 import authMiddleware from "../middleware/auth.js";
 import express from "express";
 import pool from "../../server/db.js";
+const router = express.Router();
 
 function toSqlDate(value) {
   if (!value) return null;
 
-  const [day, month, year] = value.split(".");
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
 
-  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${year}-${month}-${day}`;
 }
 
-function formatDate(sqlDate) {
-  if (!sqlDate) return null;
-
-  // Якщо Postgres повернув об'єкт Date, перетворимо його на рядок YYYY-MM-DD
-  const dateStr =
-    typeof sqlDate === "object"
-      ? sqlDate.toISOString().split("T")[0]
-      : sqlDate.toString().split("T")[0];
-
-  const parts = dateStr.split("-"); // Розбиваємо [YYYY, MM, DD]
-  if (parts.length !== 3) return sqlDate; // якщо щось пішло не так, повертаємо як є
-
-  const [year, month, day] = parts;
-  return `${day}.${month}.${year}`; // Склеюємо назад як DD.MM.YYYY
-}
-const router = express.Router();
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const doctorId = req.doctor.id;
@@ -45,7 +35,10 @@ router.post("/", authMiddleware, async (req, res) => {
       sanation_plan,
       uop,
     } = req.body;
+    console.log("DATE FROM FRONT:", date);
     const sqlDate = toSqlDate(date);
+    const sqlTime = visit_time ? String(visit_time) : null;
+
     const result = await pool.query(
       `INSERT INTO form_037 (
         doctor_id, date, visit_time,
@@ -59,14 +52,14 @@ router.post("/", authMiddleware, async (req, res) => {
       [
         doctorId,
         sqlDate,
-        visit_time,
+        sqlTime,
         patient_name,
-        age,
+        age ? Number(age) : null,
         gender,
         visit_type,
         diagnosis_1,
         diagnosis_2,
-        procedures,
+        JSON.stringify(procedures || []),
         anesthesia,
         sanation,
         sanation_plan,
@@ -80,10 +73,8 @@ router.post("/", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "DB error" });
   }
 });
-router.post("/row", authMiddleware, async (req, res) => {
-  console.log("🔥 POST /api/form037/row");
-  console.log("ДАНІ З ФРОНТЕНДУ:", req.body); // Тепер ви побачите правильні медичні ключі
 
+router.post("/row", authMiddleware, async (req, res) => {
   try {
     const doctorId = req.doctor.id;
 
@@ -107,9 +98,11 @@ router.post("/row", authMiddleware, async (req, res) => {
 
     // 2. Валідація та конвертація дати (тепер перевіряємо правильну змінну "date")
     if (!date) {
+      console.log("❌ EMPTY DATE BODY:", req.body);
       return res.status(400).json({ message: "Date is required" });
     }
     const sqlDate = toSqlDate(date);
+    const sqlTime = visit_time ? String(visit_time) : null;
 
     // 3. Запит до бази даних
     await pool.query(
@@ -135,9 +128,7 @@ router.post("/row", authMiddleware, async (req, res) => {
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
       )
       ON CONFLICT (patient_id, date, visit_time)
-
       DO UPDATE SET
-        doctor_id = EXCLUDED.doctor_id,
         patient_name = EXCLUDED.patient_name,
         age = EXCLUDED.age,
         gender = EXCLUDED.gender,
@@ -154,14 +145,14 @@ router.post("/row", authMiddleware, async (req, res) => {
         doctorId,
         patient_id,
         sqlDate,
-        visit_time,
+        sqlTime,
         patient_name,
         age ? Number(age) : null,
         gender,
         visit_type,
         diagnosis_1,
         diagnosis_2,
-        JSON.stringify(procedures), // перетворюємо масив процедур у JSON-рядок для бази
+        JSON.stringify(procedures || []), // перетворюємо масив процедур у JSON-рядок для бази
         anesthesia,
         sanation,
         sanation_plan,
@@ -172,10 +163,10 @@ router.post("/row", authMiddleware, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error("DB ERROR:", err.message);
-    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
+
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const doctorId = req.doctor.id;
@@ -185,7 +176,7 @@ router.get("/", authMiddleware, async (req, res) => {
       `SELECT * FROM form_037
        WHERE doctor_id = $1
        AND EXTRACT(MONTH FROM date::date) = $2
-AND EXTRACT(YEAR FROM date::date) = $3
+       AND EXTRACT(YEAR FROM date::date) = $3
        ORDER BY date ASC, visit_time ASC`,
       [doctorId, month, year],
     );
@@ -193,10 +184,14 @@ AND EXTRACT(YEAR FROM date::date) = $3
     res.json(
       result.rows.map((r) => ({
         ...r,
-        date: formatDate(r.date),
+        date:
+          r.date instanceof Date
+            ? r.date.toISOString().split("T")[0]
+            : String(r.date),
       })),
     );
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "DB error" });
   }
 });
