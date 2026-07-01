@@ -262,7 +262,8 @@ export function buildSummary(dailyData, startStr, endStr) {
       if (row.residence === "село") day.primaryRural++;
       if (child) day.primaryChildren++;
     }
-    const isExamined = treatments.includes("планова_санація");
+    const isExamined =
+      row.sanation_plan === true || treatments.includes("планова_санація");
 
     if (isExamined) {
       if (child) {

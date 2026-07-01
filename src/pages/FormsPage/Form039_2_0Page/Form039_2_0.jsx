@@ -89,43 +89,54 @@ export default function Form039_2_0Page() {
   const [endDate, setEndDate] = useState(
     localStorage.getItem("summaryEndDate") || "",
   );
-  const handleBuildSummary = useCallback(() => {
-    const rawDataArchive =
-      JSON.parse(localStorage.getItem("dailyDataArchive")) || {};
+  const handleBuildSummary = useCallback(async () => {
+    const token = localStorage.getItem("token");
 
-    const allArchiveRows = Object.values(rawDataArchive)
-      .flatMap((year) =>
-        Object.values(year || {}).flatMap((month) =>
-          Object.values(month || {}).flat(),
-        ),
-      )
-      .filter(Boolean);
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/form039?start=${startDate}&end=${endDate}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    console.log("status:", res.status);
+    console.log("content-type:", res.headers.get("content-type"));
+    console.log("url:", res.url);
 
-    if (!Array.isArray(allArchiveRows)) {
-      setSummary({ table1: [], table2: [] });
-      return;
-    }
+    const text = await res.text();
+    console.log(text);
+    const allRows = await res.json();
 
-    const normalizedData = allArchiveRows.map((row) => ({
-      id: row.id,
-      date: row.colDate,
-      time: row.col2,
-      name: row.col3,
-      age: row.col4,
-      visitType: row.col5,
-      medCard: row.col6,
-      residence: row.col7,
-      diagnosis1: row.col9_1,
-      tooth1: row.col9_1_tooth,
-      diagnosis2: row.col9_2,
-      tooth2: row.col9_2_tooth,
-      procedures: (row.col10_1 ? [row.col10_1] : [])
-        .concat(row.col10_2 || [], row.col10_3 || [])
-        .filter(Boolean),
-      anesthesia: row.col11,
-      sanation: row.col12,
-      uop: row.col14,
-    }));
+    const normalizedData = allRows.map((row) => {
+      const procedures = row.procedures
+        ? Array.isArray(row.procedures)
+          ? row.procedures
+          : JSON.parse(row.procedures)
+        : [];
+
+      return {
+        id: row.id,
+        date: row.date,
+        time: row.visit_time?.slice(0, 5) || "",
+        name: row.patient_name || "",
+        age: row.age,
+        visitType: row.visit_type,
+        medCard: row.med_card,
+        residence: row.residence,
+        diagnosis1: row.diagnosis_1,
+        tooth1: row.tooth_1,
+        diagnosis2: row.diagnosis_2,
+        tooth2: row.tooth_2,
+
+        procedures,
+
+        anesthesia: row.anesthesia,
+        sanation: row.sanation,
+        sanation_plan: row.sanation_plan,
+        uop: Number(row.uop) || 0,
+      };
+    });
 
     const uniqueKey = (r) =>
       `${r.date || "no-date"}_${r.time || "no-time"}_${(r.name || "no-name")

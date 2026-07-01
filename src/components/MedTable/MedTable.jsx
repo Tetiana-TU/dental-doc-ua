@@ -400,11 +400,16 @@ export default function MedTable() {
             visit_type: row.col6,
             diagnosis_1: row.col9_1,
             diagnosis_2: row.col9_2,
-            procedures: [row.col10_1, row.col10_2, row.col10_3],
+            procedures: [row.col10_1, row.col10_2, row.col10_3]
+              .map((p) => (typeof p === "object" ? p?.value : p))
+              .filter(Boolean),
             anesthesia: row.col11,
 
-            sanation: row.col12,
-            sanation_plan: row.col13,
+            sanation: row.col12?.trim() || null,
+            sanation_plan:
+              row.col13 === "1" || row.col13 === 1 || row.col13 === true
+                ? true
+                : false,
 
             uop: row.col14,
           }),

@@ -59,7 +59,7 @@ router.post("/", authMiddleware, async (req, res) => {
         visit_type,
         diagnosis_1,
         diagnosis_2,
-        JSON.stringify(procedures || []),
+        cleanProcedures,
         anesthesia,
         sanation,
         sanation_plan,
@@ -76,35 +76,63 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.post("/row", authMiddleware, async (req, res) => {
   try {
+    console.log("🔥 RAW BODY:", req.body);
+
     const doctorId = req.doctor.id;
 
-    // 1. Деструктуруємо правильні назви ключів, які приходять з вашого fetch-запиту
     const {
       patient_id,
-      date, // це row.colDate з фронтенду
-      visit_time, // це row.col2 з фронтенду
-      patient_name, // це row.col3 з фронтенду
-      age, // це row.col4 з фронтенду
-      gender, // це row.col5 з фронтенду
-      visit_type, // це row.col6 з фронтенду
-      diagnosis_1, // це row.col9_1 з фронтенду
-      diagnosis_2, // це row.col9_2 з фронтенду
-      procedures, // це масив [row.col10_1, row.col10_2, row.col10_3] з фронтенду
-      anesthesia, // це row.col11 з фронтенду
-      sanation, // це row.col12 з фронтенду
-      sanation_plan, // це row.col13 з фронтенду
-      uop, // це row.col14 з фронтенду
+      date,
+      visit_time,
+      patient_name,
+      age,
+      gender,
+      visit_type,
+      diagnosis_1,
+      diagnosis_2,
+      procedures,
+      anesthesia,
+      sanation,
+      sanation_plan,
+      uop,
     } = req.body;
 
-    // 2. Валідація та конвертація дати (тепер перевіряємо правильну змінну "date")
-    if (!date) {
-      console.log("❌ EMPTY DATE BODY:", req.body);
-      return res.status(400).json({ message: "Date is required" });
-    }
-    const sqlDate = toSqlDate(date);
-    const sqlTime = visit_time ? String(visit_time) : null;
+    // =============================
+    // 🧼 CLEANERS (production safe)
+    // =============================
 
-    // 3. Запит до бази даних
+    const sqlDate = date ? new Date(date).toISOString().split("T")[0] : null;
+    const sqlTime = visit_time || null;
+
+    // TEXT CLEAN
+    const toText = (v) => {
+      if (v === undefined || v === null || v === "") return null;
+      return String(v);
+    };
+
+    // NUMBER CLEAN
+    const toNumber = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    // BOOL CLEAN (ВАЖЛИВО!)
+    const toBool = (v) => {
+      if (v === true || v === "true" || v === 1 || v === "1") return true;
+      if (v === false || v === "false" || v === 0 || v === "0") return false;
+      return null; // 👈 ключове: НЕ ""
+    };
+    const toInt = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.trunc(n) : null;
+    };
+
+    const cleanSanationPlan = toBool(sanation_plan);
+
+    const cleanProcedures = Array.isArray(procedures)
+      ? JSON.stringify(procedures.filter((v) => v))
+      : JSON.stringify([]);
+
     await pool.query(
       `
       INSERT INTO form_037 (
@@ -125,7 +153,7 @@ router.post("/row", authMiddleware, async (req, res) => {
         uop
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
       )
       ON CONFLICT (patient_id, date, visit_time)
       DO UPDATE SET
@@ -140,30 +168,39 @@ router.post("/row", authMiddleware, async (req, res) => {
         sanation = EXCLUDED.sanation,
         sanation_plan = EXCLUDED.sanation_plan,
         uop = EXCLUDED.uop
+      RETURNING *
       `,
       [
         doctorId,
         patient_id,
         sqlDate,
         sqlTime,
-        patient_name,
-        age ? Number(age) : null,
-        gender,
-        visit_type,
-        diagnosis_1,
-        diagnosis_2,
-        JSON.stringify(procedures || []), // перетворюємо масив процедур у JSON-рядок для бази
-        anesthesia,
-        sanation,
-        sanation_plan,
-        uop,
+        toText(patient_name),
+        toInt(age),
+        toText(gender),
+        toText(visit_type),
+        toText(diagnosis_1),
+        toText(diagnosis_2),
+
+        JSON.stringify(cleanProcedures),
+
+        toText(anesthesia),
+        toText(sanation),
+        cleanSanationPlan,
+        toNumber(uop),
       ],
     );
 
-    res.json({ ok: true });
+    res.json({
+      ok: true,
+      row: result.rows[0],
+    });
   } catch (err) {
-    console.error("DB ERROR:", err.message);
-    res.status(500).json({ message: err.message });
+    console.error("❌ ROW ERROR:", err);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: err.message,
+    });
   }
 });
 
