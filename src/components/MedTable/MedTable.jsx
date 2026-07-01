@@ -222,8 +222,6 @@ const anesthesiaPoints = { 0: 0, 1: 0.5, 2: 1 };
 function createEmptyRow({ day, month, year, patientId }) {
   const now = new Date();
 
-  // const date = `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
-
   return {
     id: crypto.randomUUID(),
     patient_id: patientId,
@@ -472,20 +470,47 @@ export default function MedTable() {
     });
   };
 
-  const deleteRow = (id) => {
-    setRows((prev) => {
-      const filtered = prev.filter((r) => r.id !== id);
-      return filtered.length
-        ? filtered
-        : [
-            createEmptyRow({
-              day: 1,
-              month: selectedMonth,
-              year: selectedYear,
-              patientId: crypto.randomUUID(),
-            }),
-          ];
-    });
+  const deleteRow = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const url = `${import.meta.env.VITE_API_URL}/api/form037/${id}`;
+
+      console.log("DELETE URL:", url);
+
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json().catch(() => null);
+
+      console.log("STATUS:", res.status);
+      console.log("DATA:", data);
+
+      if (!res.ok) {
+        console.error("DELETE FAILED:", data);
+        return;
+      }
+
+      setRows((prev) => {
+        const filtered = prev.filter((r) => r.id !== id);
+
+        return filtered.length
+          ? filtered
+          : [
+              createEmptyRow({
+                day: 1,
+                month: selectedMonth,
+                year: selectedYear,
+                patientId: crypto.randomUUID(),
+              }),
+            ];
+      });
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
   };
   const toggleNode = (code) => {
     setOpenNodes((p) => ({ ...p, [code]: !p[code] }));

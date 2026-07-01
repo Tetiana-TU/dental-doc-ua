@@ -35,6 +35,18 @@ router.post("/", authMiddleware, async (req, res) => {
       sanation_plan,
       uop,
     } = req.body;
+
+    const toBool = (v) => {
+      if (v === true || v === "true" || v === 1 || v === "1") return true;
+      if (v === false || v === "false" || v === 0 || v === "0") return false;
+      return null;
+    };
+    const cleanSanationPlan = toBool(sanation_plan);
+
+    const cleanProcedures = JSON.stringify(
+      Array.isArray(procedures) ? procedures.filter(Boolean) : [],
+    );
+
     console.log("DATE FROM FRONT:", date);
     const sqlDate = toSqlDate(date);
     const sqlTime = visit_time ? String(visit_time) : null;
@@ -62,7 +74,7 @@ router.post("/", authMiddleware, async (req, res) => {
         cleanProcedures,
         anesthesia,
         sanation,
-        sanation_plan,
+        cleanSanationPlan,
         uop,
       ],
     );
@@ -97,26 +109,19 @@ router.post("/row", authMiddleware, async (req, res) => {
       uop,
     } = req.body;
 
-    // =============================
-    // 🧼 CLEANERS (production safe)
-    // =============================
-
     const sqlDate = date ? new Date(date).toISOString().split("T")[0] : null;
     const sqlTime = visit_time || null;
 
-    // TEXT CLEAN
     const toText = (v) => {
       if (v === undefined || v === null || v === "") return null;
       return String(v);
     };
 
-    // NUMBER CLEAN
     const toNumber = (v) => {
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
     };
 
-    // BOOL CLEAN (ВАЖЛИВО!)
     const toBool = (v) => {
       if (v === true || v === "true" || v === 1 || v === "1") return true;
       if (v === false || v === "false" || v === 0 || v === "0") return false;
@@ -129,11 +134,11 @@ router.post("/row", authMiddleware, async (req, res) => {
 
     const cleanSanationPlan = toBool(sanation_plan);
 
-    const cleanProcedures = Array.isArray(procedures)
-      ? JSON.stringify(procedures.filter((v) => v))
-      : JSON.stringify([]);
+    const cleanProcedures = JSON.stringify(
+      Array.isArray(procedures) ? procedures.filter(Boolean) : [],
+    );
 
-    await pool.query(
+    const result = await pool.query(
       `
       INSERT INTO form_037 (
         doctor_id,
@@ -182,7 +187,7 @@ router.post("/row", authMiddleware, async (req, res) => {
         toText(diagnosis_1),
         toText(diagnosis_2),
 
-        JSON.stringify(cleanProcedures),
+        cleanProcedures,
 
         toText(anesthesia),
         toText(sanation),
@@ -219,14 +224,45 @@ router.get("/", authMiddleware, async (req, res) => {
     );
 
     res.json(
-      result.rows.map((r) => ({
-        ...r,
-        date:
-          r.date instanceof Date
-            ? r.date.toISOString().split("T")[0]
-            : String(r.date),
-      })),
+      result.rows.map((r) => {
+        const proc = JSON.parse(r.procedures || "[]");
+
+        return {
+          ...r,
+          date:
+            r.date instanceof Date
+              ? r.date.toISOString().split("T")[0]
+              : String(r.date),
+
+          col10_1: proc[0] || "",
+          col10_2: proc[1] || "",
+          col10_3: proc[2] || "",
+        };
+      }),
     );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "DB error" });
+  }
+});
+
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const doctorId = req.doctor.id;
+
+    console.log("DELETE CHECK:", { id, doctorId });
+
+    const result = await pool.query(
+      `DELETE FROM form_037
+       WHERE id = $1 AND doctor_id = $2
+       RETURNING *`,
+      [id, doctorId],
+    );
+
+    console.log("DELETED:", result.rows[0]);
+
+    return res.json({ ok: true, deleted: result.rows[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "DB error" });

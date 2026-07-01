@@ -103,12 +103,10 @@ export default function Form039_2_0Page() {
     console.log("status:", res.status);
     console.log("content-type:", res.headers.get("content-type"));
     console.log("url:", res.url);
+    const data = await res.json(); // 👈 ОБОВʼЯЗКОВО
 
-    const text = await res.text();
-    console.log(text);
-    const allRows = await res.json();
-
-    const normalizedData = allRows.map((row) => {
+    console.log("DATA FROM API:", data);
+    const normalizedData = data.map((row) => {
       const procedures = row.procedures
         ? Array.isArray(row.procedures)
           ? row.procedures
@@ -137,7 +135,11 @@ export default function Form039_2_0Page() {
         uop: Number(row.uop) || 0,
       };
     });
-
+    console.log(
+      "NAMES:",
+      normalizedData.map((r) => r.name),
+    );
+    console.log("RAW normalizedData:", normalizedData);
     const uniqueKey = (r) =>
       `${r.date || "no-date"}_${r.time || "no-time"}_${(r.name || "no-name")
         .toString()
