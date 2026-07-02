@@ -28,14 +28,20 @@ router.post("/", authMiddleware, async (req, res) => {
       gender,
       visit_type,
       diagnosis_1,
+      diagnosis_1_tooth,
       diagnosis_2,
+      diagnosis_2_tooth,
       procedures,
       anesthesia,
       sanation,
       sanation_plan,
       uop,
     } = req.body;
-
+    const toInt = (v) => {
+      if (v === "" || v === null || v === undefined) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.trunc(n) : null;
+    };
     const toBool = (v) => {
       if (v === true || v === "true" || v === 1 || v === "1") return true;
       if (v === false || v === "false" || v === 0 || v === "0") return false;
@@ -55,11 +61,11 @@ router.post("/", authMiddleware, async (req, res) => {
       `INSERT INTO form_037 (
         doctor_id, date, visit_time,
         patient_name, age, gender,
-        visit_type, diagnosis_1, diagnosis_2,
+        visit_type, diagnosis_1, diagnosis_1_tooth,diagnosis_2,diagnosis_2_tooth,
         procedures, anesthesia,
         sanation,sanation_plan, uop
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
       RETURNING *`,
       [
         doctorId,
@@ -70,7 +76,9 @@ router.post("/", authMiddleware, async (req, res) => {
         gender,
         visit_type,
         diagnosis_1,
+        diagnosis_1_tooth,
         diagnosis_2,
+        diagnosis_2_tooth,
         cleanProcedures,
         anesthesia,
         sanation,
@@ -89,6 +97,10 @@ router.post("/", authMiddleware, async (req, res) => {
 router.post("/row", authMiddleware, async (req, res) => {
   try {
     console.log("🔥 RAW BODY:", req.body);
+    console.log("TOOTHS FROM BODY:", {
+      diagnosis_1_tooth: req.body.diagnosis_1_tooth,
+      diagnosis_2_tooth: req.body.diagnosis_2_tooth,
+    });
 
     const doctorId = req.doctor.id;
 
@@ -101,7 +113,9 @@ router.post("/row", authMiddleware, async (req, res) => {
       gender,
       visit_type,
       diagnosis_1,
+      diagnosis_1_tooth,
       diagnosis_2,
+      diagnosis_2_tooth,
       procedures,
       anesthesia,
       sanation,
@@ -128,16 +142,29 @@ router.post("/row", authMiddleware, async (req, res) => {
       return null; // 👈 ключове: НЕ ""
     };
     const toInt = (v) => {
+      if (v === "" || v === null || v === undefined) return null;
       const n = Number(v);
       return Number.isFinite(n) ? Math.trunc(n) : null;
     };
-
     const cleanSanationPlan = toBool(sanation_plan);
 
     const cleanProcedures = JSON.stringify(
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
     );
-
+    console.log("VALUES:", [
+      doctorId,
+      patient_id,
+      sqlDate,
+      sqlTime,
+      toText(patient_name),
+      toInt(age),
+      toText(gender),
+      toText(visit_type),
+      toText(diagnosis_1),
+      toInt(diagnosis_1_tooth),
+      toText(diagnosis_2),
+      toInt(diagnosis_2_tooth),
+    ]);
     const result = await pool.query(
       `
       INSERT INTO form_037 (
@@ -149,8 +176,10 @@ router.post("/row", authMiddleware, async (req, res) => {
         age,
         gender,
         visit_type,
-        diagnosis_1,
-        diagnosis_2,
+         diagnosis_1,
+  diagnosis_1_tooth,
+  diagnosis_2,
+  diagnosis_2_tooth,
         procedures,
         anesthesia,
         sanation,
@@ -158,7 +187,7 @@ router.post("/row", authMiddleware, async (req, res) => {
         uop
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
       )
       ON CONFLICT (patient_id, date, visit_time)
       DO UPDATE SET
@@ -168,6 +197,8 @@ router.post("/row", authMiddleware, async (req, res) => {
         visit_type = EXCLUDED.visit_type,
         diagnosis_1 = EXCLUDED.diagnosis_1,
         diagnosis_2 = EXCLUDED.diagnosis_2,
+        diagnosis_1_tooth = EXCLUDED.diagnosis_1_tooth,
+diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         procedures = EXCLUDED.procedures,
         anesthesia = EXCLUDED.anesthesia,
         sanation = EXCLUDED.sanation,
@@ -185,7 +216,9 @@ router.post("/row", authMiddleware, async (req, res) => {
         toText(gender),
         toText(visit_type),
         toText(diagnosis_1),
+        toInt(diagnosis_1_tooth),
         toText(diagnosis_2),
+        toInt(diagnosis_2_tooth),
 
         cleanProcedures,
 
@@ -233,7 +266,8 @@ router.get("/", authMiddleware, async (req, res) => {
             r.date instanceof Date
               ? r.date.toISOString().split("T")[0]
               : String(r.date),
-
+          col9_1_tooth: r.diagnosis_1_tooth,
+          col9_2_tooth: r.diagnosis_2_tooth,
           col10_1: proc[0] || "",
           col10_2: proc[1] || "",
           col10_3: proc[2] || "",

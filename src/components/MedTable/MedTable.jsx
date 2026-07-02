@@ -298,7 +298,8 @@ export default function MedTable() {
           col6: r.visit_type || "",
           col9_1: r.diagnosis_1 || "",
           col9_2: r.diagnosis_2 || "",
-
+          col9_1_tooth: r.diagnosis_1_tooth || "",
+          col9_2_tooth: r.diagnosis_2_tooth || "",
           col10_1: proc[0] || "",
           col10_2: proc[1] || "",
           col10_3: proc[2] || "",
@@ -372,14 +373,49 @@ export default function MedTable() {
 
     load();
   }, [selectedMonth, selectedYear]);
+  const toIntOrNull = (v) => {
+    if (v === "" || v === null || v === undefined) return null;
+
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.trunc(n) : null;
+  };
 
   const saveRow = async (row) => {
+    console.log("saveRow:", row);
     try {
       console.log("saveRow()");
       console.log("Saving row:", row);
 
       const token = localStorage.getItem("token");
+      console.log({
+        diagnosis_1: row.col9_1,
+        diagnosis_1_tooth: toIntOrNull(row.col9_1_tooth),
+        diagnosis_2: row.col9_2,
+        diagnosis_2_tooth: toIntOrNull(row.col9_2_tooth),
+      });
+      const body = {
+        patient_id: row.patient_id,
+        date: row.colDate,
+        visit_time: row.col2,
+        patient_name: row.col3,
+        age: row.col4,
+        gender: row.col5,
+        visit_type: row.col6,
+        diagnosis_1: row.col9_1,
+        diagnosis_1_tooth: toIntOrNull(row.col9_1_tooth),
+        diagnosis_2: row.col9_2,
+        diagnosis_2_tooth: toIntOrNull(row.col9_2_tooth),
+        procedures: [row.col10_1, row.col10_2, row.col10_3]
+          .map((p) => (typeof p === "object" ? p?.value : p))
+          .filter(Boolean),
+        anesthesia: row.col11,
+        sanation: row.col12?.trim() || null,
+        sanation_plan:
+          row.col13 === "1" || row.col13 === 1 || row.col13 === true,
+        uop: row.col14,
+      };
 
+      console.log("BODY:", body);
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/form037/row`,
         {
@@ -388,29 +424,7 @@ export default function MedTable() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            patient_id: row.patient_id,
-            date: row.colDate,
-            visit_time: row.col2,
-            patient_name: row.col3,
-            age: row.col4,
-            gender: row.col5,
-            visit_type: row.col6,
-            diagnosis_1: row.col9_1,
-            diagnosis_2: row.col9_2,
-            procedures: [row.col10_1, row.col10_2, row.col10_3]
-              .map((p) => (typeof p === "object" ? p?.value : p))
-              .filter(Boolean),
-            anesthesia: row.col11,
-
-            sanation: row.col12?.trim() || null,
-            sanation_plan:
-              row.col13 === "1" || row.col13 === 1 || row.col13 === true
-                ? true
-                : false,
-
-            uop: row.col14,
-          }),
+          body: JSON.stringify(body),
         },
       );
 
@@ -423,6 +437,7 @@ export default function MedTable() {
     }
   };
   const updateCell = (id, key, value) => {
+    console.log("updateCell:", { id, key, value });
     setRows((prev) => {
       const updated = prev.map((r) => {
         if (r.id !== id) return r;
@@ -431,6 +446,10 @@ export default function MedTable() {
           ...r,
           [key]: value,
         };
+        console.log("newRow tooths:", {
+          col9_1_tooth: newRow.col9_1_tooth,
+          col9_2_tooth: newRow.col9_2_tooth,
+        });
 
         if (["col10_1", "col10_2", "col10_3", "col11"].includes(key)) {
           const sum =

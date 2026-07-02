@@ -122,7 +122,10 @@ export default function TableRow({
           <input
             className={css.toothInput}
             value={row.col9_1_tooth}
-            onChange={(e) => updateCell(row.id, "col9_1_tooth", e.target.value)}
+            onChange={(e) => {
+              console.log("INPUT 1:", e.target.value);
+              updateCell(row.id, "col9_1_tooth", e.target.value);
+            }}
             placeholder="№ зуба"
             onKeyDown={(e) => handleKeyDown(e, "col9_1_tooth")}
             data-row={row.id}
@@ -154,7 +157,10 @@ export default function TableRow({
           <input
             className={css.toothInput}
             value={row.col9_2_tooth}
-            onChange={(e) => updateCell(row.id, "col9_2_tooth", e.target.value)}
+            onChange={(e) => {
+              console.log("INPUT 2:", e.target.value);
+              updateCell(row.id, "col9_2_tooth", e.target.value);
+            }}
             placeholder="№ зуба"
             onKeyDown={(e) => handleKeyDown(e, "col9_2_tooth")}
             data-row={row.id}
