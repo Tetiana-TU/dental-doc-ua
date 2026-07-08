@@ -25,7 +25,7 @@ router.post("/", authMiddleware, async (req, res) => {
       visit_time,
       patient_name,
       age,
-      gender,
+      residence,
       visit_type,
       diagnosis_1,
       diagnosis_1_tooth,
@@ -47,8 +47,8 @@ router.post("/", authMiddleware, async (req, res) => {
       if (v === false || v === "false" || v === 0 || v === "0") return false;
       return null;
     };
-    const cleanSanationPlan = toBool(sanation_plan);
-
+    const n = Number(sanation_plan);
+    const cleanSanationPlan = Number.isFinite(n) ? n : null;
     const cleanProcedures = JSON.stringify(
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
     );
@@ -60,7 +60,7 @@ router.post("/", authMiddleware, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO form_037 (
         doctor_id, date, visit_time,
-        patient_name, age, gender,
+        patient_name, age, residence,
         visit_type, diagnosis_1, diagnosis_1_tooth,diagnosis_2,diagnosis_2_tooth,
         procedures, anesthesia,
         sanation,sanation_plan, uop
@@ -73,7 +73,7 @@ router.post("/", authMiddleware, async (req, res) => {
         sqlTime,
         patient_name,
         age ? Number(age) : null,
-        gender,
+        residence,
         visit_type,
         diagnosis_1,
         diagnosis_1_tooth,
@@ -110,7 +110,7 @@ router.post("/row", authMiddleware, async (req, res) => {
       visit_time,
       patient_name,
       age,
-      gender,
+      residence,
       visit_type,
       diagnosis_1,
       diagnosis_1_tooth,
@@ -158,7 +158,7 @@ router.post("/row", authMiddleware, async (req, res) => {
       sqlTime,
       toText(patient_name),
       toInt(age),
-      toText(gender),
+      toText(residence),
       toText(visit_type),
       toText(diagnosis_1),
       toInt(diagnosis_1_tooth),
@@ -174,7 +174,7 @@ router.post("/row", authMiddleware, async (req, res) => {
         visit_time,
         patient_name,
         age,
-        gender,
+        residence,
         visit_type,
          diagnosis_1,
   diagnosis_1_tooth,
@@ -193,7 +193,7 @@ router.post("/row", authMiddleware, async (req, res) => {
       DO UPDATE SET
         patient_name = EXCLUDED.patient_name,
         age = EXCLUDED.age,
-        gender = EXCLUDED.gender,
+        residence = EXCLUDED.residence,
         visit_type = EXCLUDED.visit_type,
         diagnosis_1 = EXCLUDED.diagnosis_1,
         diagnosis_2 = EXCLUDED.diagnosis_2,
@@ -213,7 +213,7 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         sqlTime,
         toText(patient_name),
         toInt(age),
-        toText(gender),
+        toText(residence),
         toText(visit_type),
         toText(diagnosis_1),
         toInt(diagnosis_1_tooth),
@@ -228,7 +228,7 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         toNumber(uop),
       ],
     );
-
+    console.log("RETURNING:", result.rows[0]);
     res.json({
       ok: true,
       row: result.rows[0],

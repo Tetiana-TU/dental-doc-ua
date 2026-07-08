@@ -2,10 +2,23 @@ import { useState, useEffect, useCallback } from "react";
 import css from "./Form039_2_0.module.css";
 import SummaryControls from "../../../components/SummaryControls/SummaryControls";
 import { buildSummary } from "../../../../server/utils/buildSummary";
+function formatDateUI(date) {
+  if (!date) return "";
+
+  const d = new Date(date);
+
+  if (isNaN(d.getTime())) return date; // 🔥 важливо
+
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+
+  return `${dd}.${mm}.${yyyy}`;
+}
 
 function objectToRow1(obj) {
   return [
-    obj.date, // Дата
+    formatDateUI(obj.date), // Дата
     obj.workedHours, // Фактично відпрацьовано годин
     obj.visits, // Кількість відвідувань
     obj.primaryRural, // З них сільських
@@ -47,10 +60,12 @@ function objectToRow1(obj) {
 // --- функція для перетворення об'єкта у рядок таблиці 2 ---
 function objectToRow2(obj) {
   const totalExtractions =
-    (obj.ToothExtractionCaries || 0) +
-    (obj.ExtractionParodont || 0) +
-    (obj.ExtractionOrthodonticChildren || 0) +
-    (obj.ExtractionphysiologyChildren || 0);
+    obj.ToothExtractionCaries +
+    obj.ExtractionParodont +
+    obj.ToothExtractionCariesChildren +
+    obj.ExtractionOrthodonticChildren +
+    obj.ToothExtractionCaries42 +
+    obj.ExtractionphysiologyChildren;
 
   return [
     totalExtractions,
@@ -118,14 +133,17 @@ export default function Form039_2_0Page() {
         date: row.date,
         time: row.visit_time?.slice(0, 5) || "",
         name: row.patient_name || "",
+        patient_id: row.patient_id,
         age: row.age,
         visitType: row.visit_type,
         medCard: row.med_card,
         residence: row.residence,
+        is_child: row.is_child,
+        is_primary: row.visit_type === "первинне",
         diagnosis1: row.diagnosis_1,
-        tooth1: row.tooth_1,
+        tooth1: row.diagnosis_1_tooth,
         diagnosis2: row.diagnosis_2,
-        tooth2: row.tooth_2,
+        tooth2: row.diagnosis_2_tooth,
 
         procedures,
 

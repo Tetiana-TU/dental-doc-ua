@@ -229,7 +229,7 @@ function createEmptyRow({ day, month, year, patientId }) {
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
     col4: "",
-    col5: "1",
+    // col5: "1",
     col6: "",
     col7: "місто",
     col8: "",
@@ -281,7 +281,12 @@ export default function MedTable() {
       );
 
       const data = await res.json();
-      console.log("DATA FROM API:", data);
+
+      if (!res.ok) {
+        console.error("API ERROR:", data);
+        return;
+      }
+
       const now = new Date();
 
       const normalized = data.map((r) => {
@@ -399,8 +404,10 @@ export default function MedTable() {
         visit_time: row.col2,
         patient_name: row.col3,
         age: row.col4,
-        gender: row.col5,
         visit_type: row.col6,
+        residence: row.col7,
+        is_primary: row.col6 === "первинне",
+        is_child: Number(row.col4) <= 17,
         diagnosis_1: row.col9_1,
         diagnosis_1_tooth: toIntOrNull(row.col9_1_tooth),
         diagnosis_2: row.col9_2,
@@ -410,8 +417,7 @@ export default function MedTable() {
           .filter(Boolean),
         anesthesia: row.col11,
         sanation: row.col12?.trim() || null,
-        sanation_plan:
-          row.col13 === "1" || row.col13 === 1 || row.col13 === true,
+        sanation_plan: row.col13 === "" ? null : Number(row.col13),
         uop: row.col14,
       };
 

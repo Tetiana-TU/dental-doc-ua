@@ -1,11 +1,11 @@
-function parsePrimaryColumn(value) {
-  if (!value) return { total: 0, rural: 0 };
-  const [total, rural] = value.split("/").map((v) => parseInt(v) || 0);
-  return { total, rural };
-}
+// function parsePrimaryColumn(value) {
+//   if (!value) return { total: 0, rural: 0 };
+//   const [total, rural] = value.split("/").map((v) => parseInt(v) || 0);
+//   return { total, rural };
+// }
 
 function isPrimary(value) {
-  return parsePrimaryColumn(value).total === 1;
+  return value === "первинне";
 }
 
 function isChild(age) {
@@ -47,26 +47,20 @@ function calculateWorkedHours(rows) {
 function isInPeriod(dateStr, start, end) {
   if (!start || !end) return true;
 
-  const parts = dateStr.includes(".") ? dateStr.split(".") : dateStr.split("-");
+  const date = new Date(dateStr);
 
-  let date;
-
-  if (parts.length === 3) {
-    if (dateStr.includes(".")) {
-      const [d, m, y] = parts;
-      date = new Date(y, m - 1, d);
-    } else {
-      const [y, m, d] = parts;
-      date = new Date(y, m - 1, d);
-    }
-  } else {
-    return false;
-  }
+  if (isNaN(date.getTime())) return false;
 
   date.setHours(0, 0, 0, 0);
-  return date >= start && date <= end;
-}
 
+  const s = new Date(start);
+  const e = new Date(end);
+
+  s.setHours(0, 0, 0, 0);
+  e.setHours(23, 59, 59, 999);
+
+  return date >= s && date <= e;
+}
 export function buildSummary(dailyData, startStr, endStr) {
   console.log("RAW DATA SAMPLE:", dailyData.slice(0, 3));
   const start = startStr ? new Date(startStr) : null;
@@ -86,9 +80,6 @@ export function buildSummary(dailyData, startStr, endStr) {
   const sanatedAdultsSet = new Set();
   const sanatedChildrenSet = new Set();
 
-  const parodontPatientsSet = new Set();
-  const parodontChildrenSet = new Set();
-  const sanatedPatientSet = new Set();
   function classifyDiagnosis(code) {
     if (!code) return null;
 
@@ -129,7 +120,7 @@ export function buildSummary(dailyData, startStr, endStr) {
 
     const date = row.date;
     if (!date || !isInPeriod(date, start, end)) return;
-    const patientId = row.id;
+    const patientId = row.patient_id;
     // const day = groupedByDate[date];
     const age = row.age;
     const child = isChild(age);
@@ -257,13 +248,19 @@ export function buildSummary(dailyData, startStr, endStr) {
     const day = groupedByDate[date];
     day.visits++;
 
-    if (isPrimary(row.visitType)) {
+    if (row.residence === "село") {
+      day.rural++;
+    }
+
+    if (isPrimary(row.visit_type)) {
       day.primaryTotal++;
+
       if (row.residence === "село") day.primaryRural++;
+
       if (child) day.primaryChildren++;
     }
     const isExamined =
-      row.sanation_plan === true || treatments.includes("планова_санація");
+      Boolean(row.sanation_plan) || treatments.includes("планова_санація");
 
     if (isExamined) {
       if (child) {
@@ -569,8 +566,8 @@ export function buildSummary(dailyData, startStr, endStr) {
     day.sanatedAdults = day.sanatedAdultsSet.size;
     day.sanatedChildren = day.sanatedChildrenSet.size;
 
-    day.parodontTotal = parodontPatientsSet.size;
-    day.parodontChildren = parodontChildrenSet.size;
+    day.parodontTotal = day.parodontPatients.size;
+    day.parodontChildren = day.parodontChildren.size;
 
     day.mucosaFullCourse = day.mucosaPatients.size;
     day.mucosaFullCourseChildren = day.mucosaPatientsChildren.size;
@@ -592,18 +589,19 @@ export function buildSummary(dailyData, startStr, endStr) {
   let monthTotal = {};
 
   if (groupedData.length) {
-    Object.keys(groupedData[0]).forEach((key) => {
-      monthTotal[key] =
-        key === "date"
-          ? "Всього"
-          : typeof groupedData[0][key] === "number"
-            ? 0
-            : "";
+    const keys = Object.keys(groupedData[0]);
+
+    keys.forEach((key) => {
+      if (key === "date") {
+        monthTotal[key] = "Всього";
+      } else {
+        monthTotal[key] = 0;
+      }
     });
 
     groupedData.forEach((day) => {
-      Object.keys(day).forEach((key) => {
-        if (typeof day[key] === "number") {
+      keys.forEach((key) => {
+        if (typeof day[key] === "number" && !isNaN(day[key])) {
           monthTotal[key] += day[key];
         }
       });

@@ -5,14 +5,14 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const isProduction = process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === "production";
 
 const pool = new Pool(
-  isProduction
+  useSSL
     ? {
         connectionString: process.env.DATABASE_URL,
         ssl: {
-          rejectUnauthorized: false, // Обов'язково для Render
+          rejectUnauthorized: false,
         },
       }
     : {
@@ -20,8 +20,7 @@ const pool = new Pool(
         host: process.env.DATABASE_HOST,
         database: process.env.DATABASE_NAME,
         password: process.env.DATABASE_PASSWORD,
-        port: process.env.DATABASE_PORT,
+        port: Number(process.env.DATABASE_PORT),
       },
 );
-
 export default pool;
