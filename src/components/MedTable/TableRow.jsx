@@ -8,7 +8,6 @@ export default function TableRow({
   onKeyDownCustom,
   procedureOptions,
   openDiagnosisModal,
-  onRowBlur,
 }) {
   const handleKeyDown = (e, cellKey) => {
     if (onKeyDownCustom) {
@@ -34,7 +33,6 @@ export default function TableRow({
           type="text"
           value={row.col3 || ""}
           onChange={(e) => updateCell(row.id, "col3", e.target.value)}
-          onBlur={onRowBlur}
           onKeyDown={(e) => handleKeyDown(e, "col3")}
           data-row={row.id}
           data-col="col3"

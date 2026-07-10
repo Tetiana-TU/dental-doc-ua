@@ -49,8 +49,10 @@ router.post("/", authMiddleware, async (req, res) => {
       if (v === false || v === "false" || v === 0 || v === "0") return false;
       return null;
     };
-    const n = Number(sanation_plan);
-    const cleanSanationPlan = Number.isFinite(n) ? n : null;
+    const toSmallInt = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
     const cleanProcedures = JSON.stringify(
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
     );
@@ -87,7 +89,7 @@ router.post("/", authMiddleware, async (req, res) => {
         cleanProcedures,
         anesthesia,
         sanation,
-        cleanSanationPlan,
+        sanation_plan,
         uop,
       ],
     );
@@ -153,6 +155,10 @@ router.post("/row", authMiddleware, async (req, res) => {
       const n = Number(v);
       return Number.isFinite(n) ? Math.trunc(n) : null;
     };
+    const toSmallInt = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
     const n = Number(sanation_plan);
     const cleanSanationPlan = Number.isFinite(n) ? n : null;
 
@@ -169,6 +175,8 @@ router.post("/row", authMiddleware, async (req, res) => {
       toText(medical_card),
       toText(residence),
       toText(population_group),
+      toSmallInt(sanation),
+      cleanSanationPlan,
       toText(visit_type),
       toText(diagnosis_1),
       toInt(diagnosis_1_tooth),
@@ -199,7 +207,7 @@ router.post("/row", authMiddleware, async (req, res) => {
         uop
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
       )
       ON CONFLICT (patient_id, date, visit_time)
       DO UPDATE SET
@@ -239,8 +247,8 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         cleanProcedures,
 
         toText(anesthesia),
-        Number(sanation) || 0,
-        cleanSanationPlan,
+        toSmallInt(sanation),
+        toSmallInt(sanation_plan),
         toNumber(uop),
       ],
     );

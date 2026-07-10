@@ -279,8 +279,9 @@ export function buildSummary(dailyData, startStr, endStr) {
         day.primaryChildren++;
       }
     }
+
     const isExamined =
-      Boolean(row.sanation_plan) || treatments.includes("планова_санація");
+      Number(row.sanation_plan) === 1 || treatments.includes("планова_санація");
 
     if (isExamined) {
       if (child) {
@@ -294,7 +295,7 @@ export function buildSummary(dailyData, startStr, endStr) {
       else day.needSanationAdultsSet.add(patientId);
     }
 
-    const isSanated = row.sanation === "San";
+    const isSanated = row.sanation == 1;
 
     if (isSanated) {
       if (child) {

@@ -420,8 +420,8 @@ export default function MedTable() {
           .map((p) => (typeof p === "object" ? p?.value : p))
           .filter(Boolean),
         anesthesia: row.col11,
-        sanation: Number(row.col12) || 0,
-        sanation_plan: Number(row.col13) || 0,
+        sanation: row.col12,
+        sanation_plan: row.col13,
         uop: row.col14,
       };
 
@@ -471,7 +471,7 @@ export default function MedTable() {
           newRow.col14 = sum;
         }
 
-        // saveRow(newRow);
+        saveRow(newRow);
 
         return newRow;
       });
@@ -823,7 +823,6 @@ export default function MedTable() {
                       onKeyDownCustom={(e, cellKey) =>
                         handleKeyDown(e, row.id, cellKey)
                       }
-                      onRowBlur={() => saveRow(row)}
                     />,
                   );
                 });
