@@ -21,7 +21,7 @@ function objectToRow1(obj) {
     formatDateUI(obj.date), // Дата
     obj.workedHours, // Фактично відпрацьовано годин
     obj.visits, // Кількість відвідувань
-    obj.primaryRural, // З них сільських
+    obj.rural, // З них сільських
     `${obj.primaryTotal || 0}/${obj.primaryRural || 0}`, // Кількість первинних
     obj.primaryChildren, // З них дітей
     obj.emergency, // Отримали невідкладну допомогу 7
@@ -119,8 +119,18 @@ export default function Form039_2_0Page() {
     console.log("content-type:", res.headers.get("content-type"));
     console.log("url:", res.url);
     const data = await res.json(); // 👈 ОБОВʼЯЗКОВО
-
-    console.log("DATA FROM API:", data);
+    console.log(
+      "CHECK VALUES:",
+      data.map((r) => ({
+        name: r.patient_name,
+        visit_type: r.visit_type,
+        residence: r.residence,
+        age: r.age,
+      })),
+    );
+    console.log("RAW DATA:", data);
+    console.log("FIRST ROW:", data[0]);
+    console.log(JSON.stringify(data[0], null, 2));
     const normalizedData = data.map((row) => {
       const procedures = row.procedures
         ? Array.isArray(row.procedures)
@@ -135,7 +145,7 @@ export default function Form039_2_0Page() {
         name: row.patient_name || "",
         patient_id: row.patient_id,
         age: row.age,
-        visitType: row.visit_type,
+        visit_type: row.visit_type,
         medCard: row.med_card,
         residence: row.residence,
         is_child: row.is_child,

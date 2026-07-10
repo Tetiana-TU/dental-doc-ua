@@ -124,6 +124,8 @@ const procedureOptions = [
   },
   { value: "PlC", label: "PlC" },
   { value: "PlLC", label: "PlLC" },
+  { value: "PlAm", label: "PlAm" },
+  { value: "PlCC", label: "PlCC" },
   { value: "зняття_напластувань", label: "Повне зняття зубних напластувань" },
   {
     value: "медикаментозне_лікування_пародонту",
@@ -229,7 +231,7 @@ function createEmptyRow({ day, month, year, patientId }) {
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
     col4: "",
-    // col5: "1",
+    col5: "1",
     col6: "",
     col7: "місто",
     col8: "",
@@ -299,8 +301,10 @@ export default function MedTable() {
           col2: r.visit_time ? r.visit_time.slice(0, 5) : "",
           col3: r.patient_name || "",
           col4: r.age || "",
-          col5: r.gender || "",
-          col6: r.visit_type || "",
+          col5: r.visit_type ? "1" : "2",
+          col6: r.medical_card || "",
+          col7: r.residence || "місто",
+          col8: r.population_group || "",
           col9_1: r.diagnosis_1 || "",
           col9_2: r.diagnosis_2 || "",
           col9_1_tooth: r.diagnosis_1_tooth || "",
@@ -404,9 +408,10 @@ export default function MedTable() {
         visit_time: row.col2,
         patient_name: row.col3,
         age: row.col4,
-        visit_type: row.col6,
+        visit_type: row.col5,
+        medical_card: row.col6,
         residence: row.col7,
-        is_primary: row.col6 === "первинне",
+        population_group: row.col8,
         is_child: Number(row.col4) <= 17,
         diagnosis_1: row.col9_1,
         diagnosis_1_tooth: toIntOrNull(row.col9_1_tooth),
@@ -467,7 +472,7 @@ export default function MedTable() {
           newRow.col14 = sum;
         }
 
-        saveRow(newRow);
+        // saveRow(newRow);
 
         return newRow;
       });
@@ -819,6 +824,7 @@ export default function MedTable() {
                       onKeyDownCustom={(e, cellKey) =>
                         handleKeyDown(e, row.id, cellKey)
                       }
+                      onRowBlur={() => saveRow(row)}
                     />,
                   );
                 });

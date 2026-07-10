@@ -43,7 +43,7 @@ export default function TableRow({
 
       <td className={css.col4}>
         <input
-          value={row.col4}
+          value={row.col4 || ""}
           onChange={(e) => updateCell(row.id, "col4", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col4")}
           data-row={row.id}
@@ -67,7 +67,7 @@ export default function TableRow({
 
       <td className={css.col6}>
         <input
-          value={row.col6}
+          value={row.col6 || ""}
           onChange={(e) => updateCell(row.id, "col6", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col6")}
           data-row={row.id}
@@ -91,7 +91,7 @@ export default function TableRow({
 
       <td className={css.col8}>
         <input
-          value={row.col8}
+          value={row.col8 || ""}
           onChange={(e) => updateCell(row.id, "col8", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col8")}
           data-row={row.id}
@@ -121,7 +121,7 @@ export default function TableRow({
 
           <input
             className={css.toothInput}
-            value={row.col9_1_tooth}
+            value={row.col9_1_tooth || ""}
             onChange={(e) => {
               console.log("INPUT 1:", e.target.value);
               updateCell(row.id, "col9_1_tooth", e.target.value);
@@ -156,7 +156,7 @@ export default function TableRow({
 
           <input
             className={css.toothInput}
-            value={row.col9_2_tooth}
+            value={row.col9_2_tooth || ""}
             onChange={(e) => {
               console.log("INPUT 2:", e.target.value);
               updateCell(row.id, "col9_2_tooth", e.target.value);
@@ -174,7 +174,7 @@ export default function TableRow({
         <td key={num} className={css[`col10${num}`]}>
           <select
             className={css.myList}
-            value={row[`col10_${num}`]}
+            value={row[`col10_${num}`] || ""}
             onChange={(e) => updateCell(row.id, `col10_${num}`, e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, `col10_${num}`)}
             data-row={row.id}

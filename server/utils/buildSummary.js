@@ -74,11 +74,17 @@ export function buildSummary(dailyData, startStr, endStr) {
   const examinedAdultsSet = new Set();
   const examinedChildrenSet = new Set();
 
+  const primaryPatientsYear = new Set();
+
   const needSanationAdultsSet = new Set();
   const needSanationChildrenSet = new Set();
 
   const sanatedAdultsSet = new Set();
   const sanatedChildrenSet = new Set();
+  const parodontPatientsSet = new Set();
+  const parodontChildrenSet = new Set();
+
+  const sanatedPatientSet = new Set();
 
   function classifyDiagnosis(code) {
     if (!code) return null;
@@ -247,17 +253,31 @@ export function buildSummary(dailyData, startStr, endStr) {
     }
     const day = groupedByDate[date];
     day.visits++;
+    console.log({
+      name: row.name,
+      visit_type: row.visit_type,
+      residence: row.residence,
+      age: row.age,
+    });
 
     if (row.residence === "село") {
       day.rural++;
     }
 
-    if (isPrimary(row.visit_type)) {
+    const primaryKey = `${new Date(row.date).getFullYear()}_${patientId}`;
+
+    if (isPrimary(row.visit_type) && !primaryPatientsYear.has(primaryKey)) {
+      primaryPatientsYear.add(primaryKey);
+
       day.primaryTotal++;
 
-      if (row.residence === "село") day.primaryRural++;
+      if (row.residence === "село") {
+        day.primaryRural++;
+      }
 
-      if (child) day.primaryChildren++;
+      if (child) {
+        day.primaryChildren++;
+      }
     }
     const isExamined =
       Boolean(row.sanation_plan) || treatments.includes("планова_санація");
@@ -303,11 +323,9 @@ export function buildSummary(dailyData, startStr, endStr) {
 
     if (hasParodont) {
       day.parodontPatients.add(patientId);
-      parodontPatientsSet.add(patientId);
 
       if (child) {
         day.parodontChildrenPatients.add(patientId);
-        parodontChildrenSet.add(patientId);
       }
     }
 
@@ -551,6 +569,7 @@ export function buildSummary(dailyData, startStr, endStr) {
       }
     }
   });
+
   Object.keys(groupedByDate).forEach((date) => {
     const rows = dailyData.filter((r) => r.date === date && r.time);
     groupedByDate[date].workedHours = calculateWorkedHours(rows);
@@ -567,7 +586,7 @@ export function buildSummary(dailyData, startStr, endStr) {
     day.sanatedChildren = day.sanatedChildrenSet.size;
 
     day.parodontTotal = day.parodontPatients.size;
-    day.parodontChildren = day.parodontChildren.size;
+    day.parodontChildren = day.parodontChildrenPatients.size;
 
     day.mucosaFullCourse = day.mucosaPatients.size;
     day.mucosaFullCourseChildren = day.mucosaPatientsChildren.size;
