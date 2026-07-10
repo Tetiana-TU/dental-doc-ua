@@ -26,6 +26,8 @@ router.post("/", authMiddleware, async (req, res) => {
       patient_name,
       age,
       residence,
+      medical_card,
+      population_group,
       visit_type,
       diagnosis_1,
       diagnosis_1_tooth,
@@ -60,12 +62,13 @@ router.post("/", authMiddleware, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO form_037 (
         doctor_id, date, visit_time,
-        patient_name, age, residence,
+        patient_name, age, residence,medical_card,
+      population_group,
         visit_type, diagnosis_1, diagnosis_1_tooth,diagnosis_2,diagnosis_2_tooth,
         procedures, anesthesia,
         sanation,sanation_plan, uop
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
       RETURNING *`,
       [
         doctorId,
@@ -74,6 +77,8 @@ router.post("/", authMiddleware, async (req, res) => {
         patient_name,
         age ? Number(age) : null,
         residence,
+        medical_card,
+        population_group,
         visit_type,
         diagnosis_1,
         diagnosis_1_tooth,
@@ -111,6 +116,8 @@ router.post("/row", authMiddleware, async (req, res) => {
       patient_name,
       age,
       residence,
+      medical_card,
+      population_group,
       visit_type,
       diagnosis_1,
       diagnosis_1_tooth,
@@ -158,7 +165,9 @@ router.post("/row", authMiddleware, async (req, res) => {
       sqlTime,
       toText(patient_name),
       toInt(age),
+      toText(medical_card),
       toText(residence),
+      toText(population_group),
       toText(visit_type),
       toText(diagnosis_1),
       toInt(diagnosis_1_tooth),
@@ -175,11 +184,13 @@ router.post("/row", authMiddleware, async (req, res) => {
         patient_name,
         age,
         residence,
+         medical_card,
+        population_group,
         visit_type,
-         diagnosis_1,
-  diagnosis_1_tooth,
-  diagnosis_2,
-  diagnosis_2_tooth,
+        diagnosis_1,
+        diagnosis_1_tooth,
+        diagnosis_2,
+        diagnosis_2_tooth,
         procedures,
         anesthesia,
         sanation,
@@ -187,13 +198,15 @@ router.post("/row", authMiddleware, async (req, res) => {
         uop
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18
       )
       ON CONFLICT (patient_id, date, visit_time)
       DO UPDATE SET
         patient_name = EXCLUDED.patient_name,
         age = EXCLUDED.age,
         residence = EXCLUDED.residence,
+        medical_card = EXCLUDED.medical_card,
+        population_group = EXCLUDED.population_group,
         visit_type = EXCLUDED.visit_type,
         diagnosis_1 = EXCLUDED.diagnosis_1,
         diagnosis_2 = EXCLUDED.diagnosis_2,
@@ -214,6 +227,8 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         toText(patient_name),
         toInt(age),
         toText(residence),
+        toText(medical_card),
+        toText(population_group),
         toText(visit_type),
         toText(diagnosis_1),
         toInt(diagnosis_1_tooth),

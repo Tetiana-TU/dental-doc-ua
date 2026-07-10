@@ -43,7 +43,7 @@ export default function TableRow({
 
       <td className={css.col4}>
         <input
-          value={row.col4 || ""}
+          value={row.col4 ?? ""}
           onChange={(e) => updateCell(row.id, "col4", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col4")}
           data-row={row.id}
