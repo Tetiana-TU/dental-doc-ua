@@ -282,7 +282,9 @@ router.get("/", authMiddleware, async (req, res) => {
 
     res.json(
       result.rows.map((r) => {
-        const proc = JSON.parse(r.procedures || "[]");
+        const proc = Array.isArray(r.procedures)
+          ? r.procedures
+          : JSON.parse(r.procedures || "[]");
 
         return {
           ...r,

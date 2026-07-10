@@ -8,6 +8,7 @@ export default function TableRow({
   onKeyDownCustom,
   procedureOptions,
   openDiagnosisModal,
+  onRowBlur,
 }) {
   const handleKeyDown = (e, cellKey) => {
     if (onKeyDownCustom) {
@@ -33,6 +34,10 @@ export default function TableRow({
           type="text"
           value={row.col3 || ""}
           onChange={(e) => updateCell(row.id, "col3", e.target.value)}
+          onBlur={() => {
+            console.log("BLUR FIRED", row.id);
+            onRowBlur(row.id);
+          }}
           onKeyDown={(e) => handleKeyDown(e, "col3")}
           data-row={row.id}
           data-col="col3"
@@ -43,6 +48,7 @@ export default function TableRow({
         <input
           value={row.col4 ?? ""}
           onChange={(e) => updateCell(row.id, "col4", e.target.value)}
+          onBlur={() => onRowBlur(row)}
           onKeyDown={(e) => handleKeyDown(e, "col4")}
           data-row={row.id}
           data-col="col4"
@@ -54,6 +60,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col5}
           onChange={(e) => updateCell(row.id, "col5", e.target.value)}
+          onBlur={() => onRowBlur(row)}
           onKeyDown={(e) => handleKeyDown(e, "col5")}
           data-row={row.id}
           data-col="col5"

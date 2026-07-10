@@ -8,7 +8,7 @@ const { Pool } = pg;
 const isProduction = process.env.NODE_ENV === "production";
 
 const pool = new Pool(
-  useSSL
+  isProduction
     ? {
         connectionString: process.env.DATABASE_URL,
         ssl: {
@@ -23,4 +23,5 @@ const pool = new Pool(
         port: Number(process.env.DATABASE_PORT),
       },
 );
+
 export default pool;

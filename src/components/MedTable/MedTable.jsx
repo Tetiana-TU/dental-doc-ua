@@ -22,6 +22,7 @@ function DiagnosisTree({
   openNodes,
   toggleNode,
   selectedCode,
+  onRowBlur,
 }) {
   return data.map((node) => {
     const isOpen = openNodes?.[node.code];
@@ -442,8 +443,29 @@ export default function MedTable() {
 
       const data = await res.json();
       console.log(data);
+      if (data.row) {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.patient_id === data.row.patient_id
+              ? {
+                  ...r,
+                  id: data.row.id,
+                }
+              : r,
+          ),
+        );
+      }
     } catch (err) {
       console.error("FETCH ERROR:", err);
+    }
+  };
+  const handleRowBlur = (rowId) => {
+    const currentRow = rows.find((r) => r.id === rowId);
+
+    console.log("BLUR ROW:", currentRow);
+
+    if (currentRow) {
+      saveRow(currentRow);
     }
   };
   const updateCell = (id, key, value) => {
@@ -820,6 +842,7 @@ export default function MedTable() {
                       deleteRow={() => deleteRow(row.id)}
                       procedureOptions={procedureOptions}
                       openDiagnosisModal={openDiagnosisModal}
+                      onRowBlur={handleRowBlur}
                       onKeyDownCustom={(e, cellKey) =>
                         handleKeyDown(e, row.id, cellKey)
                       }
