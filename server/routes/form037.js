@@ -153,7 +153,8 @@ router.post("/row", authMiddleware, async (req, res) => {
       const n = Number(v);
       return Number.isFinite(n) ? Math.trunc(n) : null;
     };
-    const cleanSanationPlan = toBool(sanation_plan);
+    const n = Number(sanation_plan);
+    const cleanSanationPlan = Number.isFinite(n) ? n : null;
 
     const cleanProcedures = JSON.stringify(
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
@@ -238,7 +239,7 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         cleanProcedures,
 
         toText(anesthesia),
-        toText(sanation),
+        Number(sanation) || 0,
         cleanSanationPlan,
         toNumber(uop),
       ],

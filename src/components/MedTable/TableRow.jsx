@@ -213,8 +213,8 @@ export default function TableRow({
           data-row={row.id}
           data-col="col12"
         >
-          <option value="">—</option>
-          <option value="San">Сан</option>
+          <option value="0">—</option>
+          <option value="1">Сан</option>
         </select>
       </td>
 

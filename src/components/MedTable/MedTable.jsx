@@ -230,11 +230,11 @@ function createEmptyRow({ day, month, year, patientId }) {
     colDate: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
-    col4: r.age ?? "",
-    col5: String(r.visit_type ?? ""),
-    col6: r.medical_card ?? "",
+    col4: "",
+    col5: "",
+    col6: "",
     col7: "місто",
-    col8: r.population_group ?? "",
+    col8: "",
     col9_1: "",
     col9_1_tooth: "",
     col9_2: "",
@@ -243,8 +243,8 @@ function createEmptyRow({ day, month, year, patientId }) {
     col10_2: "",
     col10_3: "",
     col11: "0",
-    col12: "",
-    col13: "",
+    col12: "0",
+    col13: "0",
     col14: 0,
   };
 }
@@ -314,8 +314,8 @@ export default function MedTable() {
           col10_3: proc[2] || "",
 
           col11: r.anesthesia ?? "0",
-          col12: r.sanation ?? "",
-          col13: r.sanation_plan ?? "",
+          col12: String(r.sanation ?? 0),
+          col13: String(r.sanation_plan ?? 0),
           col14: r.uop || 0,
         };
       });
@@ -420,8 +420,8 @@ export default function MedTable() {
           .map((p) => (typeof p === "object" ? p?.value : p))
           .filter(Boolean),
         anesthesia: row.col11,
-        sanation: row.col12?.trim() || null,
-        sanation_plan: row.col13 === "" ? null : Number(row.col13),
+        sanation: Number(row.col12) || 0,
+        sanation_plan: Number(row.col13) || 0,
         uop: row.col14,
       };
 
