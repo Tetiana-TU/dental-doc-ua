@@ -136,7 +136,7 @@ export default function Form039_2_0Page() {
         patient_id: row.patient_id,
         age: row.age,
         visit_type: row.visit_type,
-        medCard: row.med_card,
+        medCard: row.medical_card,
         residence: row.residence,
         is_child: row.is_child,
         diagnosis1: row.diagnosis_1,

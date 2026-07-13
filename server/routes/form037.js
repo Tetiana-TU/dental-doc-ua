@@ -104,11 +104,7 @@ router.post("/", authMiddleware, async (req, res) => {
 router.post("/row", authMiddleware, async (req, res) => {
   try {
     console.log("🔥 RAW BODY:", req.body);
-    console.log("TOOTHS FROM BODY:", {
-      diagnosis_1_tooth: req.body.diagnosis_1_tooth,
-      diagnosis_2_tooth: req.body.diagnosis_2_tooth,
-    });
-
+    console.log("visit_type FROM BODY =", req.body.visit_type);
     const doctorId = req.doctor.id;
 
     const {
@@ -165,24 +161,7 @@ router.post("/row", authMiddleware, async (req, res) => {
     const cleanProcedures = JSON.stringify(
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
     );
-    console.log("VALUES:", [
-      doctorId,
-      patient_id,
-      sqlDate,
-      sqlTime,
-      toText(patient_name),
-      toInt(age),
-      toText(medical_card),
-      toText(residence),
-      toText(population_group),
-      toSmallInt(sanation),
-      cleanSanationPlan,
-      toText(visit_type),
-      toText(diagnosis_1),
-      toInt(diagnosis_1_tooth),
-      toText(diagnosis_2),
-      toInt(diagnosis_2_tooth),
-    ]);
+    console.log("SAVE VISIT TYPE:", visit_type);
     const result = await pool.query(
       `
       INSERT INTO form_037 (
