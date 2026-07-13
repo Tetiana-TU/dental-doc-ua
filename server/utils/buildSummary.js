@@ -1,9 +1,3 @@
-// function parsePrimaryColumn(value) {
-//   if (!value) return { total: 0, rural: 0 };
-//   const [total, rural] = value.split("/").map((v) => parseInt(v) || 0);
-//   return { total, rural };
-// }
-
 function isPrimary(value) {
   return Number(value) === 1;
 }
@@ -73,8 +67,6 @@ export function buildSummary(dailyData, startStr, endStr) {
 
   const examinedAdultsSet = new Set();
   const examinedChildrenSet = new Set();
-
-  const primaryPatientsPeriod = new Set();
 
   const needSanationAdultsSet = new Set();
   const needSanationChildrenSet = new Set();
@@ -158,6 +150,7 @@ export function buildSummary(dailyData, startStr, endStr) {
     if (!groupedByDate[date]) {
       groupedByDate[date] = {
         date,
+        primaryPatientsSet: new Set(),
         examinedAdultsSet: new Set(),
         examinedChildrenSet: new Set(),
 
@@ -263,11 +256,17 @@ export function buildSummary(dailyData, startStr, endStr) {
     if (row.residence === "село") {
       day.rural++;
     }
-
+    console.log(
+      "PRIMARY CHECK:",
+      row.name,
+      row.visit_type,
+      isPrimary(row.visit_type),
+      row.date,
+    );
     const primaryKey = patientId || `${row.patient_name}_${row.age}`;
 
-    if (isPrimary(row.visit_type) && !primaryPatientsPeriod.has(primaryKey)) {
-      primaryPatientsPeriod.add(primaryKey);
+    if (isPrimary(row.visit_type) && !day.primaryPatientsSet.has(primaryKey)) {
+      day.primaryPatientsSet.add(primaryKey);
 
       day.primaryTotal++;
 
@@ -279,7 +278,6 @@ export function buildSummary(dailyData, startStr, endStr) {
         day.primaryChildren++;
       }
     }
-
     const isExamined =
       Number(row.sanation_plan) === 1 || treatments.includes("планова_санація");
 
@@ -598,6 +596,7 @@ export function buildSummary(dailyData, startStr, endStr) {
       day.OperatioTumors +
       day.OperatioImplants +
       day.OperatioOthers;
+    delete day.primaryPatientsSet;
     delete day.mucosaPatients;
     delete day.parodontPatients;
     delete day.mucosaPatientsChildren;

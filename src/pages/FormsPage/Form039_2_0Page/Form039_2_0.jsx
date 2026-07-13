@@ -139,7 +139,6 @@ export default function Form039_2_0Page() {
         medCard: row.med_card,
         residence: row.residence,
         is_child: row.is_child,
-        is_primary: Number(row.visit_type) === 1,
         diagnosis1: row.diagnosis_1,
         tooth1: row.diagnosis_1_tooth,
         diagnosis2: row.diagnosis_2,
