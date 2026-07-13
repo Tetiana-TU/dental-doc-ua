@@ -5,7 +5,7 @@
 // }
 
 function isPrimary(value) {
-  return value === "первинне";
+  return Number(value) === 1;
 }
 
 function isChild(age) {
@@ -74,7 +74,7 @@ export function buildSummary(dailyData, startStr, endStr) {
   const examinedAdultsSet = new Set();
   const examinedChildrenSet = new Set();
 
-  const primaryPatientsYear = new Set();
+  const primaryPatientsPeriod = new Set();
 
   const needSanationAdultsSet = new Set();
   const needSanationChildrenSet = new Set();
@@ -264,10 +264,10 @@ export function buildSummary(dailyData, startStr, endStr) {
       day.rural++;
     }
 
-    const primaryKey = `${new Date(row.date).getFullYear()}_${patientId}`;
+    const primaryKey = patientId || `${row.patient_name}_${row.age}`;
 
-    if (isPrimary(row.visit_type) && !primaryPatientsYear.has(primaryKey)) {
-      primaryPatientsYear.add(primaryKey);
+    if (isPrimary(row.visit_type) && !primaryPatientsPeriod.has(primaryKey)) {
+      primaryPatientsPeriod.add(primaryKey);
 
       day.primaryTotal++;
 

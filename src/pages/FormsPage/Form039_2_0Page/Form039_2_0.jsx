@@ -21,9 +21,9 @@ function objectToRow1(obj) {
     formatDateUI(obj.date), // Дата
     obj.workedHours, // Фактично відпрацьовано годин
     obj.visits, // Кількість відвідувань
-    obj.rural, // З них сільських
-    `${obj.primaryTotal || 0}/${obj.primaryRural || 0}`, // Кількість первинних
-    obj.primaryChildren, // З них дітей
+    obj.rural, // З них сільських 4 кол
+    `${obj.primaryTotal || 0}/${obj.primaryRural || 0}`, // Кількість первинних, село 5 кол.
+    obj.primaryChildren, // З них дітей 6 кол
     obj.emergency, // Отримали невідкладну допомогу 7
     obj.groupSum, // Запломбовано зубів (сума) 8
     obj.cariesPermanent, // карієс постійні  9
@@ -118,19 +118,9 @@ export default function Form039_2_0Page() {
     console.log("status:", res.status);
     console.log("content-type:", res.headers.get("content-type"));
     console.log("url:", res.url);
-    const data = await res.json(); // 👈 ОБОВʼЯЗКОВО
-    console.log(
-      "CHECK VALUES:",
-      data.map((r) => ({
-        name: r.patient_name,
-        visit_type: r.visit_type,
-        residence: r.residence,
-        age: r.age,
-      })),
-    );
-    console.log("RAW DATA:", data);
-    console.log("FIRST ROW:", data[0]);
-    console.log(JSON.stringify(data[0], null, 2));
+    const data = await res.json();
+    console.log("API FIRST ROW:", data[0]);
+    console.log("API FIRST ROW JSON:", JSON.stringify(data[0], null, 2));
     const normalizedData = data.map((row) => {
       const procedures = row.procedures
         ? Array.isArray(row.procedures)
@@ -149,7 +139,7 @@ export default function Form039_2_0Page() {
         medCard: row.med_card,
         residence: row.residence,
         is_child: row.is_child,
-        is_primary: row.visit_type === "первинне",
+        is_primary: Number(row.visit_type) === 1,
         diagnosis1: row.diagnosis_1,
         tooth1: row.diagnosis_1_tooth,
         diagnosis2: row.diagnosis_2,
