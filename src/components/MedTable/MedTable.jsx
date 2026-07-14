@@ -222,12 +222,13 @@ const procedurePoints = {
 };
 const anesthesiaPoints = { 0: 0, 1: 0.5, 2: 1 };
 
-function createEmptyRow({ day, month, year, patientId }) {
+function createEmptyRow({ day, month, year, patientId, isNew = false }) {
   const now = new Date();
 
   return {
     id: crypto.randomUUID(),
     patient_id: patientId,
+    isNew,
     colDate: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
@@ -297,6 +298,7 @@ export default function MedTable() {
 
         return {
           id: r.id ?? r._id ?? crypto.randomUUID(),
+          isNew: false,
           patient_id: r.patient_id,
           colDate: r.date,
           col2: r.visit_time ? r.visit_time.slice(0, 5) : "",
@@ -358,6 +360,7 @@ export default function MedTable() {
               month: selectedMonth,
               year: selectedYear,
               patientId: crypto.randomUUID(),
+              isNew: true,
             }),
           );
         }
@@ -371,6 +374,7 @@ export default function MedTable() {
             month: selectedMonth,
             year: selectedYear,
             patientId: crypto.randomUUID(),
+            isNew: true,
           }),
         );
       }
@@ -468,8 +472,54 @@ export default function MedTable() {
       saveRow(currentRow);
     }
   };
+  const confirmPatient = (rowId) => {
+    let rowToSave = null;
+
+    setRows((prev) => {
+      const updated = prev.map((row) => {
+        if (row.id !== rowId) return row;
+
+        const newRow = {
+          ...row,
+          isNew: false,
+        };
+
+        if (row.isNew && row.col3.trim()) {
+          const now = new Date();
+
+          newRow.col2 =
+            `${String(now.getHours()).padStart(2, "0")}:` +
+            `${String(now.getMinutes()).padStart(2, "0")}`;
+        }
+
+        rowToSave = newRow;
+
+        return newRow;
+      });
+
+      const last = updated[updated.length - 1];
+
+      if (last?.id === rowId && last.col3.trim()) {
+        updated.push(
+          createEmptyRow({
+            day: new Date().getDate(),
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear(),
+            patientId: crypto.randomUUID(),
+            isNew: true,
+          }),
+        );
+      }
+
+      return updated;
+    });
+
+    if (rowToSave) {
+      saveRow(rowToSave);
+    }
+  };
   const updateCell = (id, key, value) => {
-    console.log("updateCell:", { id, key, value });
+    console.log("UPDATE:", { id, key, value });
     setRows((prev) => {
       const updated = prev.map((r) => {
         if (r.id !== id) return r;
@@ -478,11 +528,24 @@ export default function MedTable() {
           ...r,
           [key]: value,
         };
-        console.log("newRow tooths:", {
-          col9_1_tooth: newRow.col9_1_tooth,
-          col9_2_tooth: newRow.col9_2_tooth,
-        });
+        console.log("ROW BEFORE:", r);
+        if (key === "col3" && r.isNew && value.trim()) {
+          const now = new Date();
 
+          newRow.col2 =
+            `${String(now.getHours()).padStart(2, "0")}:` +
+            `${String(now.getMinutes()).padStart(2, "0")}`;
+
+          newRow.isNew = false;
+          console.log("TIME UPDATED:", newRow.col2);
+        }
+        if (key === "col12") {
+          newRow.col13 = value === "1" ? "1" : "0";
+        }
+        console.log("SANATION UPDATE:", {
+          col12: newRow.col12,
+          col13: newRow.col13,
+        });
         if (["col10_1", "col10_2", "col10_3", "col11"].includes(key)) {
           const sum =
             ["col10_1", "col10_2", "col10_3"].reduce(
@@ -493,14 +556,12 @@ export default function MedTable() {
           newRow.col14 = sum;
         }
 
-        saveRow(newRow);
-
         return newRow;
       });
 
       const last = updated[updated.length - 1];
 
-      if (last?.col3?.trim()) {
+      if (key === "col3" && value.trim().length > 2 && last?.id === id) {
         const hasEmpty = updated.some((r) => !r.col3?.trim());
 
         if (!hasEmpty) {
@@ -512,6 +573,7 @@ export default function MedTable() {
               month: currentDate.getMonth() + 1,
               year: currentDate.getFullYear(),
               patientId: crypto.randomUUID(),
+              isNew: true,
             }),
           );
         }
@@ -563,6 +625,7 @@ export default function MedTable() {
       console.error("Delete error:", err);
     }
   };
+
   const toggleNode = (code) => {
     setOpenNodes((p) => ({ ...p, [code]: !p[code] }));
   };
@@ -626,6 +689,63 @@ export default function MedTable() {
   }
 
   const handleKeyDown = (e, rowId, cellKey) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      // якщо Enter у ПІБ
+      if (cellKey === "col3") {
+        const row = rows.find((r) => r.id === rowId);
+
+        if (row?.col3?.trim()) {
+          confirmPatient(rowId);
+        }
+      }
+
+      // перехід вправо
+      const rowIndex = rows.findIndex((r) => r.id === rowId);
+
+      const colKeys = [
+        "col2",
+        "col3",
+        "col4",
+        "col5",
+        "col6",
+        "col7",
+        "col8",
+        "col9_1",
+        "col9_1_tooth",
+        "col9_2",
+        "col9_2_tooth",
+        "col10_1",
+        "col10_2",
+        "col10_3",
+        "col11",
+        "col12",
+        "col13",
+      ];
+
+      const cellIndex = colKeys.indexOf(cellKey);
+
+      let nextRowIndex = rowIndex;
+      let nextCellIndex = cellIndex + 1;
+
+      // якщо Enter у останній колонці — перейти на першу клітинку нового рядка
+      if (nextCellIndex >= colKeys.length) {
+        nextCellIndex = 0;
+        nextRowIndex = Math.min(rowIndex + 1, rows.length - 1);
+      }
+
+      const nextInput = document.querySelector(
+        `input[data-row="${rows[nextRowIndex].id}"][data-col="${colKeys[nextCellIndex]}"],
+     select[data-row="${rows[nextRowIndex].id}"][data-col="${colKeys[nextCellIndex]}"]`,
+      );
+
+      if (nextInput) {
+        nextInput.focus();
+      }
+
+      return;
+    }
     const excludedCells = ["col9_1_tooth", "col9_2_tooth"];
     if (e.key === "Delete" && !excludedCells.includes(cellKey)) {
       if (window.confirm("Ви впевнені, що хочете видалити дані пацієнта?")) {
@@ -835,7 +955,7 @@ export default function MedTable() {
 
                   rowsWithDailyTotals.push(
                     <TableRow
-                      key={`${row.id}-${index}`}
+                      key={row.id}
                       row={row}
                       rowNumber={index + 1}
                       updateCell={updateCell}

@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import css from "./Form039_2_0.module.css";
+
 import SummaryControls from "../../../components/SummaryControls/SummaryControls";
 import { buildSummary } from "../../../../server/utils/buildSummary";
+
 function formatDateUI(date) {
   if (!date) return "";
 
@@ -97,6 +100,7 @@ function objectToRow2(obj) {
   ];
 }
 export default function Form039_2_0Page() {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState({ table1: [], table2: [] });
   const [startDate, setStartDate] = useState(
     localStorage.getItem("summaryStartDate") || "",
@@ -203,6 +207,12 @@ export default function Form039_2_0Page() {
   }, [endDate]);
   return (
     <div className={css.formPage}>
+      <button
+        className={`${css.homeButton} ${css.noPrint}`}
+        onClick={() => navigate("/")}
+      >
+        Головна
+      </button>
       <h3 className={`${css.titleForm39} ${css.noPrint}`}>
         Зведений щоденний облік роботи лікаря
       </h3>

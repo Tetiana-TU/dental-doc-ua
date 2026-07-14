@@ -16,6 +16,34 @@ body {
   margin: 0 auto;
   padding: 10px 10px;
 }
+.homeButton {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+
+  padding: 8px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  background: #2b2b33;
+  color: #fff;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.homeButton:hover {
+  background: #3a3a45;
+  transform: translateY(-1px);
+}
+
+.homeButton:active {
+  transform: translateY(0);
+}
 
 @media print {
   body,

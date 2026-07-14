@@ -95,15 +95,24 @@ export default function TableRow({
       </td>
 
       <td className={css.col8}>
-        <input
+        <select
+          className={css.myList}
           value={row.col8 || ""}
           onChange={(e) => updateCell(row.id, "col8", e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "col8")}
           data-row={row.id}
           data-col="col8"
-        />
+        >
+          <option value="">—</option>
+          <option value="ДГ">ДГ</option>
+          <option value="Ш">Ш</option>
+          <option value="С">С</option>
+          <option value="В">В</option>
+          <option value="Р">Р</option>
+          <option value="ДПК">ДПК</option>
+          <option value="Д">Д</option>
+        </select>
       </td>
-
       {/* ДІАГНОЗ 1 */}
       <td className={css.col91}>
         <div className={css.diagWrap}>
@@ -223,7 +232,7 @@ export default function TableRow({
         </select>
       </td>
 
-      <td className={css.col13}>
+      {/* <td className={css.col13}>
         <input
           value={row.col13}
           onChange={(e) => updateCell(row.id, "col13", e.target.value)}
@@ -231,8 +240,8 @@ export default function TableRow({
           data-row={row.id}
           data-col="col13"
         />
-      </td>
-
+      </td> */}
+      <td className={css.col13}>{row.col13}</td>
       <td className={css.col14}>{row.col14}</td>
     </tr>
   );

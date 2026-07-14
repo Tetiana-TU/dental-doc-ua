@@ -17,19 +17,8 @@ function Form037() {
 
   return (
     <div className={css.pageWrapper}>
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          position: "absolute",
-          top: "15px",
-          left: "15px",
-          fontSize: "22px",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        🏠
+      <button className={css.homeButton} onClick={() => navigate("/")}>
+        Головна
       </button>
       <FormHeader />
       <TitleBlock />

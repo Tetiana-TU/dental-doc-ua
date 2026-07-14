@@ -115,6 +115,36 @@ table {
   background-color: #e8f0ff;
   border-top: 2px solid #000;
 }
+.homeButton {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+
+  padding: 8px 18px;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+
+  background: linear-gradient(180deg, #3b3b45 0%, #2a2a33 100%);
+  color: #fff;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.homeButton:hover {
+  background: linear-gradient(180deg, #4b4b58 0%, #343442 100%);
+  transform: translateY(-1px);
+}
+
+.homeButton:active {
+  transform: translateY(0);
+}
 @media print {
   body {
     background: none;

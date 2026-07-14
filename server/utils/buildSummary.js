@@ -334,9 +334,15 @@ export function buildSummary(dailyData, startStr, endStr) {
       if (child) day.mucosaPatientsChildren.add(patientId);
     }
 
-    // ===== anesthesia =====
-    if (row.anesthesia === "value2") day.anesthesiaLocal++;
-    if (row.anesthesia === "value3") day.anesthesiaGeneral++;
+    const anesthesia = Number(row.anesthesia);
+
+    if (anesthesia === 1) {
+      day.anesthesiaLocal++;
+    }
+
+    if (anesthesia === 2) {
+      day.anesthesiaGeneral++;
+    }
 
     // ===== uop =====
     const uop = parseFloat(row.uop);
