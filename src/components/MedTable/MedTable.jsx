@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import css from "./MedTable.module.css";
 import TableRow from "./TableRow";
 import PeriodRow from "../PeriodRow/PeriodRow";
@@ -22,57 +28,157 @@ function DiagnosisTree({
   openNodes,
   toggleNode,
   selectedCode,
-  onRowBlur,
+  activeIndex,
+  setActiveIndex,
+  treeRef,
 }) {
-  return data.map((node) => {
-    const isOpen = openNodes?.[node.code];
-    const isSelected = Boolean(node.code) && selectedCode === node.code;
+  const itemRefs = useRef([]);
+  const flatNodes = React.useMemo(() => {
+    const result = [];
 
-    return (
-      <div key={node.code ?? node.name}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          {node.children && (
-            <button onClick={() => toggleNode(node.code)}>
-              {isOpen ? "−" : "+"}
-            </button>
-          )}
+    const flatten = (nodes) => {
+      nodes.forEach((node) => {
+        result.push(node);
 
+        if (node.children && openNodes[node.code]) {
+          flatten(node.children);
+        }
+      });
+    };
+
+    flatten(data);
+
+    return result;
+  }, [data, openNodes]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+
+        setActiveIndex((prev) => Math.min(prev + 1, flatNodes.length - 1));
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+
+        const node = flatNodes[activeIndex];
+
+        if (!node) return;
+
+        if (node.children) {
+          toggleNode(node.code);
+
+          setTimeout(() => {
+            setActiveIndex((prev) => prev + 1);
+          }, 50);
+
+          return;
+        }
+
+        onSelect(node);
+      }
+
+      if (e.key === "ArrowRight") {
+        const node = flatNodes[activeIndex];
+
+        if (node?.children) {
+          toggleNode(node.code);
+        }
+      }
+
+      if (e.key === "ArrowLeft") {
+        const node = flatNodes[activeIndex];
+
+        if (node?.children && openNodes[node.code]) {
+          toggleNode(node.code);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [activeIndex, openNodes]);
+  useLayoutEffect(() => {
+    treeRef.current?.focus();
+  }, []);
+  useEffect(() => {
+    const el = itemRefs.current[activeIndex];
+
+    if (el) {
+      el.scrollIntoView({
+        block: "nearest",
+        behavior: "instant", // або "smooth"
+      });
+    }
+  }, [activeIndex]);
+  return (
+    <div
+      ref={treeRef}
+      tabIndex={0}
+      style={{
+        outline: "none",
+        maxHeight: "500px",
+        overflowY: "auto",
+      }}
+    >
+      {flatNodes.map((node, index) => {
+        const isActive = index === activeIndex;
+
+        const isSelected = selectedCode === node.code;
+
+        return (
           <div
-            onClick={() => !node.children && onSelect(node)}
+            ref={(el) => (itemRefs.current[index] = el)}
+            key={node.code ?? node.name}
             style={{
+              display: "flex",
+              alignItems: "center",
+              paddingLeft: 20,
+              background: isActive
+                ? "#cce5ff"
+                : isSelected
+                  ? "#ffe08a"
+                  : "transparent",
+              color: isActive ? "#000" : "#fff",
               cursor: "pointer",
-              paddingLeft: 6,
-              fontWeight: isSelected ? "bold" : "normal",
-              background: isSelected ? "#ffe08a" : "transparent",
-              borderRadius: "4px",
-              padding: "2px 6px",
-              display: "inline-block",
+            }}
+            onClick={() => {
+              if (!node.children) {
+                onSelect(node);
+              }
             }}
           >
-            {node.code ? `${node.code} - ${node.name}` : node.name}
-          </div>
-        </div>
+            {node.children && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleNode(node.code);
+                }}
+              >
+                {openNodes[node.code] ? "-" : "+"}
+              </button>
+            )}
 
-        {node.children && isOpen && (
-          <div style={{ marginLeft: 20 }}>
-            <DiagnosisTree
-              data={node.children}
-              onSelect={onSelect}
-              openNodes={openNodes}
-              toggleNode={toggleNode}
-              selectedCode={selectedCode}
-            />
+            {node.code}
+            {" - "}
+            {node.name}
           </div>
-        )}
-      </div>
-    );
-  });
+        );
+      })}
+    </div>
+  );
 }
+
 const buildOpenNodesToDepth = (data, maxDepth = 2, depth = 0, acc = {}) => {
   if (depth >= maxDepth) return acc;
 
@@ -253,7 +359,12 @@ function createEmptyRow({ day, month, year, patientId, isNew = false }) {
 
 export default function MedTable() {
   const now = new Date();
+  const today =
+    `${now.getFullYear()}-` +
+    `${String(now.getMonth() + 1).padStart(2, "0")}-` +
+    `${String(now.getDate()).padStart(2, "0")}`;
 
+  const todayRef = useRef(null);
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
@@ -264,6 +375,8 @@ export default function MedTable() {
     open: false,
     rowId: null,
     field: null,
+    top: 0,
+    left: 0,
   });
 
   const [openNodes, setOpenNodes] = useState({});
@@ -272,7 +385,52 @@ export default function MedTable() {
     field: null,
     code: null,
   });
+  const [treeActiveIndex, setTreeActiveIndex] = useState(0);
+  const treeRef = useRef(null);
+  const modalRef = useRef(null);
+  useEffect(() => {
+    if (!modalState.open) return;
 
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        setModalState({
+          open: false,
+          rowId: null,
+          field: null,
+          top: 0,
+          left: 0,
+        });
+      }
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setModalState({
+          open: false,
+          rowId: null,
+          field: null,
+          top: 0,
+          left: 0,
+        });
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [modalState.open]);
+  useEffect(() => {
+    if (todayRef.current) {
+      todayRef.current.scrollIntoView({
+        behavior: "instant",
+        block: "center",
+      });
+    }
+  }, [rows]);
   useEffect(() => {
     const load = async () => {
       const token = localStorage.getItem("token");
@@ -430,7 +588,13 @@ export default function MedTable() {
         uop: row.col14,
       };
 
-      console.log("BODY:", body);
+      console.log("SAVE DIAG CHECK:", {
+        id: row.id,
+        col9_1: row.col9_1,
+        col9_2: row.col9_2,
+        tooth1: row.col9_1_tooth,
+        tooth2: row.col9_2_tooth,
+      });
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/form037/row`,
         {
@@ -458,48 +622,69 @@ export default function MedTable() {
               : r,
           ),
         );
+
+        setSelectedDiagnosis((prev) => ({
+          ...prev,
+          rowId: data.row.id,
+        }));
+
+        setModalState((prev) => ({
+          ...prev,
+          rowId: data.row.id,
+        }));
       }
     } catch (err) {
       console.error("FETCH ERROR:", err);
     }
   };
   const handleRowBlur = (rowId) => {
-    const currentRow = rows.find((r) => r.id === rowId);
-
-    console.log("BLUR ROW:", currentRow);
-
-    if (currentRow) {
-      saveRow(currentRow);
-    }
-  };
-  const confirmPatient = (rowId) => {
-    let rowToSave = null;
+    console.log("BLUR ROW ID:", rowId);
 
     setRows((prev) => {
-      const updated = prev.map((row) => {
-        if (row.id !== rowId) return row;
+      const row = prev.find((r) => String(r.id) === String(rowId));
 
-        const newRow = {
-          ...row,
-          isNew: false,
-        };
+      console.log("FOUND ROW:", row);
 
-        if (row.isNew && row.col3.trim()) {
-          const now = new Date();
+      if (row) {
+        console.log("SAVING ROW:", row);
+        saveRow(row);
+      } else {
+        console.log("ROW NOT FOUND");
+      }
 
-          newRow.col2 =
-            `${String(now.getHours()).padStart(2, "0")}:` +
-            `${String(now.getMinutes()).padStart(2, "0")}`;
-        }
+      return prev;
+    });
+  };
 
-        rowToSave = newRow;
+  const confirmPatient = (rowId) => {
+    let rowToSave;
 
-        return newRow;
-      });
+    setRows((prev) => {
+      const row = prev.find((r) => r.id === rowId);
+
+      if (!row) return prev;
+
+      const newRow = {
+        ...row,
+        isNew: false,
+      };
+
+      if (row.isNew && row.col3?.trim()) {
+        const now = new Date();
+
+        newRow.col2 =
+          `${String(now.getHours()).padStart(2, "0")}:` +
+          `${String(now.getMinutes()).padStart(2, "0")}`;
+      }
+
+      // зберігаємо саме актуальний рядок
+      saveRow(newRow);
+
+      const updated = prev.map((r) => (r.id === rowId ? newRow : r));
 
       const last = updated[updated.length - 1];
 
-      if (last?.id === rowId && last.col3.trim()) {
+      if (last.id === rowId && last.col3?.trim()) {
         updated.push(
           createEmptyRow({
             day: new Date().getDate(),
@@ -510,19 +695,15 @@ export default function MedTable() {
           }),
         );
       }
-
+      console.log("UPDATED ROWS:", updated);
       return updated;
     });
-
-    if (rowToSave) {
-      saveRow(rowToSave);
-    }
   };
   const updateCell = (id, key, value) => {
     console.log("UPDATE:", { id, key, value });
     setRows((prev) => {
       const updated = prev.map((r) => {
-        if (r.id !== id) return r;
+        if (String(r.id) !== String(id)) return r;
 
         const newRow = {
           ...r,
@@ -537,15 +718,11 @@ export default function MedTable() {
             `${String(now.getMinutes()).padStart(2, "0")}`;
 
           newRow.isNew = false;
-          console.log("TIME UPDATED:", newRow.col2);
         }
         if (key === "col12") {
           newRow.col13 = value === "1" ? "1" : "0";
         }
-        console.log("SANATION UPDATE:", {
-          col12: newRow.col12,
-          col13: newRow.col13,
-        });
+
         if (["col10_1", "col10_2", "col10_3", "col11"].includes(key)) {
           const sum =
             ["col10_1", "col10_2", "col10_3"].reduce(
@@ -555,30 +732,12 @@ export default function MedTable() {
 
           newRow.col14 = sum;
         }
-
+        console.log("NEW ROW:", newRow);
         return newRow;
       });
 
       const last = updated[updated.length - 1];
-
-      if (key === "col3" && value.trim().length > 2 && last?.id === id) {
-        const hasEmpty = updated.some((r) => !r.col3?.trim());
-
-        if (!hasEmpty) {
-          const currentDate = new Date();
-
-          updated.push(
-            createEmptyRow({
-              day: currentDate.getDate(),
-              month: currentDate.getMonth() + 1,
-              year: currentDate.getFullYear(),
-              patientId: crypto.randomUUID(),
-              isNew: true,
-            }),
-          );
-        }
-      }
-
+      console.log("UPDATED ARRAY:", updated);
       return updated;
     });
   };
@@ -631,7 +790,42 @@ export default function MedTable() {
   };
 
   const selectDiagnosis = (node) => {
-    updateCell(modalState.rowId, modalState.field, node.code);
+    console.log("selectDiagnosis", node);
+
+    const rowId = selectedDiagnosis.rowId;
+    const field = selectedDiagnosis.field;
+
+    if (!rowId || !field) return;
+
+    console.log("SELECT:", {
+      rowId,
+      field,
+      code: node.code,
+    });
+
+    // оновлюємо клітинку
+    updateCell(rowId, field, node.code);
+
+    // переходимо на номер зуба
+    if (field === "col9_1") {
+      requestAnimationFrame(() => {
+        const toothInput = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col9_1_tooth"]`,
+        );
+
+        toothInput?.focus();
+      });
+    }
+
+    if (field === "col9_2") {
+      requestAnimationFrame(() => {
+        const toothInput = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col9_2_tooth"]`,
+        );
+
+        toothInput?.focus();
+      });
+    }
 
     setSelectedDiagnosis({
       rowId: null,
@@ -639,11 +833,23 @@ export default function MedTable() {
       code: null,
     });
 
-    setModalState({ open: false, rowId: null, field: null });
+    setModalState({
+      open: false,
+      rowId: null,
+      field: null,
+    });
   };
+  const openDiagnosisModal = (event, rowId, field) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const currentRow = rows.find((r) => String(r.id) === String(rowId));
 
-  const openDiagnosisModal = (rowId, field) => {
-    const currentValue = rows.find((r) => r.id === rowId)?.[field];
+    console.log("OPEN MODAL:", {
+      rowId,
+      type: typeof rowId,
+      field,
+    });
+
+    const currentValue = currentRow?.[field];
 
     let open = {};
 
@@ -657,14 +863,23 @@ export default function MedTable() {
     setOpenNodes(open);
 
     setSelectedDiagnosis({
-      rowId,
+      rowId: currentRow.id,
       field,
-      code: currentValue,
+      code: null,
     });
 
-    setModalState({ open: true, rowId, field });
+    setModalState({
+      open: true,
+      rowId: currentRow.id,
+      field,
+    });
+
+    setTreeActiveIndex(0);
+
+    setTimeout(() => {
+      treeRef.current?.focus();
+    }, 100);
   };
-  console.log(rows);
   const grouped = rows.reduce((acc, row) => {
     if (!row.colDate) return acc;
 
@@ -689,16 +904,82 @@ export default function MedTable() {
   }
 
   const handleKeyDown = (e, rowId, cellKey) => {
+    console.log("KEY CHECK:", {
+      key: e.key,
+      rowId,
+      cellKey,
+    });
+
     if (e.key === "Enter") {
+      console.log("TABLE", cellKey);
       e.preventDefault();
+      if (cellKey === "col12") {
+        e.preventDefault();
 
-      // якщо Enter у ПІБ
-      if (cellKey === "col3") {
-        const row = rows.find((r) => r.id === rowId);
+        confirmPatient(rowId);
 
-        if (row?.col3?.trim()) {
-          confirmPatient(rowId);
-        }
+        setTimeout(() => {
+          const inputs = document.querySelectorAll('input[data-col="col3"]');
+
+          if (inputs.length > 0) {
+            inputs[inputs.length - 1].focus();
+          }
+        }, 100);
+
+        return;
+      }
+      if (cellKey === "col9_1_tooth") {
+        e.preventDefault();
+
+        const diagnosisInput = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col9_2"]`,
+        );
+
+        if (!diagnosisInput) return;
+
+        // спочатку ставимо фокус на другий діагноз
+        diagnosisInput.focus();
+
+        // потім відкриваємо дерево
+        setTimeout(() => {
+          openDiagnosisModal(
+            {
+              currentTarget: diagnosisInput,
+            },
+            rowId,
+            "col9_2",
+          );
+
+          setTimeout(() => {
+            treeRef.current?.focus();
+          }, 50);
+        }, 50);
+
+        return;
+      }
+      // Enter у колонці 8 відкриває перший діагноз
+      if (cellKey === "col8") {
+        setTimeout(() => {
+          const diagnosisInput = document.querySelector(
+            `input[data-row="${rowId}"][data-col="col9_1"]`,
+          );
+
+          if (diagnosisInput) {
+            openDiagnosisModal(
+              {
+                currentTarget: diagnosisInput,
+              },
+              rowId,
+              "col9_1",
+            );
+
+            setTimeout(() => {
+              treeRef.current?.focus();
+            }, 100);
+          }
+        }, 50);
+
+        return;
       }
 
       // перехід вправо
@@ -721,18 +1002,21 @@ export default function MedTable() {
         "col10_3",
         "col11",
         "col12",
-        "col13",
       ];
 
       const cellIndex = colKeys.indexOf(cellKey);
-
+      if (cellIndex === -1) {
+        console.warn("UNKNOWN CELL:", cellKey);
+        return;
+      }
       let nextRowIndex = rowIndex;
       let nextCellIndex = cellIndex + 1;
 
       // якщо Enter у останній колонці — перейти на першу клітинку нового рядка
       if (nextCellIndex >= colKeys.length) {
-        nextCellIndex = 0;
+        // nextCellIndex = 0;
         nextRowIndex = Math.min(rowIndex + 1, rows.length - 1);
+        nextCellIndex = colKeys.indexOf("col3");
       }
 
       const nextInput = document.querySelector(
@@ -829,191 +1113,199 @@ export default function MedTable() {
         setMonth={setSelectedMonth}
         setYear={setSelectedYear}
       />
+      <div className={css.tableWrapper}>
+        <table className={css.medTable}>
+          <colgroup>
+            {Array.from({ length: 17 }).map((_, index) => (
+              <col key={index} />
+            ))}
+          </colgroup>
+          <thead className={css.shapkaTable}>
+            {/*ПЕРШИЙ РЯДОК ЗАГОЛОВКІВ*/}
+            <tr>
+              <th rowSpan="2">Номер п/п</th>
+              <th rowSpan="2">Години прийому</th>
+              <th rowSpan="2">
+                Прізвище, ім’я, по батькові <br />
+                пацієнта
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Кількість повних років
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Порядковий номер відвідування <br />
+                (первинне, вторинне)
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Номер медичної карти
+                <br />
+                стоматологічного хворого, <br />
+                номер наряду
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Місце проживання (жит.міста
+                <br />
+                (м), села (с))
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Група населення <br />
+                (ДГ,Ш,С,В,Р,ДПК,Д)
+              </th>
+              <th colSpan="2">Діагноз</th>
 
-      <table className={css.medTable}>
-        <colgroup>
-          {Array.from({ length: 17 }).map((_, index) => (
-            <col key={index} />
-          ))}
-        </colgroup>
-        <thead className={css.shapkaTable}>
-          {/*ПЕРШИЙ РЯДОК ЗАГОЛОВКІВ*/}
-          <tr>
-            <th rowSpan="2">Номер п/п</th>
-            <th rowSpan="2">Години прийому</th>
-            <th rowSpan="2">
-              Прізвище, ім’я, по батькові <br />
-              пацієнта
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Кількість повних років
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Порядковий номер відвідування <br />
-              (первинне, вторинне)
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Номер медичної карти
-              <br />
-              стоматологічного хворого, <br />
-              номер наряду
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Місце проживання (жит.міста
-              <br />
-              (м), села (с))
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Група населення <br />
-              (ДГ,Ш,С,В,Р,ДПК,Д)
-            </th>
-            <th colSpan="2">Діагноз</th>
+              <th colSpan="3">
+                Комплекс виконаного лікування <br />
+                чи його етап, включаючи суміжні
+                <br />
+                спеціальності
+              </th>
 
-            <th colSpan="3">
-              Комплекс виконаного лікування <br />
-              чи його етап, включаючи суміжні
-              <br />
-              спеціальності
-            </th>
+              <th rowSpan="2" className={css.vertical}>
+                Вид знеболювання
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Сановано (всього)
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                У тому числі планова санація
+              </th>
+              <th rowSpan="2" className={css.vertical}>
+                Відпрацьовано умовних <br />
+                одиниць праці (УОП)
+              </th>
+            </tr>
 
-            <th rowSpan="2" className={css.vertical}>
-              Вид знеболювання
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Сановано (всього)
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              У тому числі планова санація
-            </th>
-            <th rowSpan="2" className={css.vertical}>
-              Відпрацьовано умовних <br />
-              одиниць праці (УОП)
-            </th>
-          </tr>
+            {/*ДРУГИЙ РЯДОК ПІДКОЛОНОК */}
+            <tr>
+              <th>
+                Діагноз <br />1
+              </th>
+              <th>
+                Діагноз <br />2
+              </th>
+              <th>
+                Процедура <br />1
+              </th>
+              <th>
+                Процедура <br />2
+              </th>
+              <th>
+                Процедура <br />3
+              </th>
+            </tr>
+            {/*РЯДОК НУМЕРАЦІЇ ГРАФ */}
+            <tr className={css.colNumbers}>
+              <th>(1)</th>
+              <th>(2)</th>
+              <th>(3)</th>
+              <th>(4)</th>
+              <th>(5)</th>
+              <th>(6)</th>
+              <th>(7)</th>
+              <th>(8)</th>
+              <th colSpan="2">(9)</th>
+              <th colSpan="3">(10)</th>
+              <th>(11)</th>
+              <th>(12)</th>
+              <th>(13)</th>
+              <th>(14)</th>
+            </tr>
+          </thead>
 
-          {/*ДРУГИЙ РЯДОК ПІДКОЛОНОК */}
-          <tr>
-            <th>
-              Діагноз <br />1
-            </th>
-            <th>
-              Діагноз <br />2
-            </th>
-            <th>
-              Процедура <br />1
-            </th>
-            <th>
-              Процедура <br />2
-            </th>
-            <th>
-              Процедура <br />3
-            </th>
-          </tr>
-          {/*РЯДОК НУМЕРАЦІЇ ГРАФ */}
-          <tr className={css.colNumbers}>
-            <th>(1)</th>
-            <th>(2)</th>
-            <th>(3)</th>
-            <th>(4)</th>
-            <th>(5)</th>
-            <th>(6)</th>
-            <th>(7)</th>
-            <th>(8)</th>
-            <th colSpan="2">(9)</th>
-            <th colSpan="3">(10)</th>
-            <th>(11)</th>
-            <th>(12)</th>
-            <th>(13)</th>
-            <th>(14)</th>
-          </tr>
-        </thead>
+          <tbody id="tableBody" className={css.tableBody}>
+            {(() => {
+              const rowsWithDailyTotals = [];
 
-        <tbody id="tableBody" className={css.tableBody}>
-          {(() => {
-            const rowsWithDailyTotals = [];
+              Object.entries(grouped)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .forEach(([date, dayRows]) => {
+                  let dailySum = 0;
 
-            Object.entries(grouped)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .forEach(([date, dayRows]) => {
-                let dailySum = 0;
-
-                // заголовок дня
-                rowsWithDailyTotals.push(
-                  <tr key={`date-${date}`}>
-                    <td
-                      colSpan="17"
-                      style={{ fontWeight: "bold", textAlign: "center" }}
-                    >
-                      {formatDate(date)}
-                    </td>
-                  </tr>,
-                );
-
-                // рядки пацієнтів
-                dayRows.forEach((row, index) => {
-                  dailySum += Number(row.col14) || 0;
-
+                  // заголовок дня
                   rowsWithDailyTotals.push(
-                    <TableRow
-                      key={row.id}
-                      row={row}
-                      rowNumber={index + 1}
-                      updateCell={updateCell}
-                      deleteRow={() => deleteRow(row.id)}
-                      procedureOptions={procedureOptions}
-                      openDiagnosisModal={openDiagnosisModal}
-                      onRowBlur={handleRowBlur}
-                      onKeyDownCustom={(e, cellKey) =>
-                        handleKeyDown(e, row.id, cellKey)
-                      }
-                    />,
+                    <tr
+                      key={`date-${date}`}
+                      ref={date === today ? todayRef : null}
+                    >
+                      <td
+                        colSpan="17"
+                        style={{ fontWeight: "bold", textAlign: "center" }}
+                      >
+                        {formatDate(date)}
+                      </td>
+                    </tr>,
+                  );
+
+                  // рядки пацієнтів
+                  dayRows.forEach((row, index) => {
+                    const isToday = row.colDate === today;
+                    dailySum += Number(row.col14) || 0;
+
+                    rowsWithDailyTotals.push(
+                      <TableRow
+                        key={row.id}
+                        row={row}
+                        rowNumber={index + 1}
+                        updateCell={updateCell}
+                        deleteRow={() => deleteRow(row.id)}
+                        procedureOptions={procedureOptions}
+                        openDiagnosisModal={openDiagnosisModal}
+                        onRowBlur={handleRowBlur}
+                        onKeyDownCustom={handleKeyDown}
+                      />,
+                    );
+                  });
+
+                  // підсумок за день
+                  rowsWithDailyTotals.push(
+                    <tr key={`total-${date}`} className={css.totalRow}>
+                      {Array.from({ length: 16 }).map((_, idx) => (
+                        <td key={idx}></td>
+                      ))}
+                      <td style={{ fontWeight: "bold", textAlign: "center" }}>
+                        {dailySum.toFixed(2)}
+                      </td>
+                    </tr>,
                   );
                 });
 
-                // підсумок за день
-                rowsWithDailyTotals.push(
-                  <tr key={`total-${date}`} className={css.totalRow}>
-                    {Array.from({ length: 16 }).map((_, idx) => (
-                      <td key={idx}></td>
-                    ))}
-                    <td style={{ fontWeight: "bold", textAlign: "center" }}>
-                      {dailySum.toFixed(2)}
-                    </td>
-                  </tr>,
-                );
-              });
+              // місячний підсумок
+              const monthTotal = rows.reduce(
+                (sum, row) => sum + (Number(row.col14) || 0),
+                0,
+              );
 
-            // місячний підсумок
-            const monthTotal = rows.reduce(
-              (sum, row) => sum + (Number(row.col14) || 0),
-              0,
-            );
+              rowsWithDailyTotals.push(
+                <tr key="month-total" className={css.monthTotalRow}>
+                  {Array.from({ length: 16 }).map((_, idx) => (
+                    <td key={idx}></td>
+                  ))}
+                  <td style={{ fontWeight: "bold", textAlign: "center" }}>
+                    {monthTotal}
+                  </td>
+                </tr>,
+              );
 
-            rowsWithDailyTotals.push(
-              <tr key="month-total" className={css.monthTotalRow}>
-                {Array.from({ length: 16 }).map((_, idx) => (
-                  <td key={idx}></td>
-                ))}
-                <td style={{ fontWeight: "bold", textAlign: "center" }}>
-                  {monthTotal}
-                </td>
-              </tr>,
-            );
-
-            return rowsWithDailyTotals;
-          })()}
-        </tbody>
-      </table>
+              return rowsWithDailyTotals;
+            })()}
+          </tbody>
+        </table>
+      </div>
       {modalState.open && (
-        <div className={css.modal}>
-          <div className={css.modalContent}>
-            <DiagnosisTree
-              data={icdData}
-              onSelect={selectDiagnosis}
-              openNodes={openNodes}
-              toggleNode={toggleNode}
-              selectedCode={selectedDiagnosis.code}
-            />
+        <div className={css.overlay}>
+          <div ref={modalRef} className={css.modal}>
+            <div className={css.modalContent}>
+              <DiagnosisTree
+                data={icdData}
+                onSelect={selectDiagnosis}
+                openNodes={openNodes}
+                toggleNode={toggleNode}
+                selectedCode={selectedDiagnosis.code}
+                activeIndex={treeActiveIndex}
+                setActiveIndex={setTreeActiveIndex}
+                treeRef={treeRef}
+              />
+            </div>
           </div>
         </div>
       )}

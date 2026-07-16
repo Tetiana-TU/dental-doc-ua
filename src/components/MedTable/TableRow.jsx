@@ -3,6 +3,7 @@ import css from "./MedTable.module.css";
 
 export default function TableRow({
   row,
+  rowRef,
   updateCell,
   rowNumber,
   onKeyDownCustom,
@@ -10,13 +11,21 @@ export default function TableRow({
   openDiagnosisModal,
   onRowBlur,
 }) {
+  console.log("TABLEROW", row.id, row.col9_1, row.col9_2);
+
   const handleKeyDown = (e, cellKey) => {
+    console.log("KEY CHECK:", {
+      key: e.key,
+      rowId: row.id,
+      cellKey,
+    });
+
     if (onKeyDownCustom) {
-      onKeyDownCustom(e, cellKey);
+      onKeyDownCustom(e, row.id, cellKey);
     }
   };
   return (
-    <tr className={css.inputRow}>
+    <tr ref={rowRef} className={css.inputRow}>
       <td className={css.col1}>{rowNumber}</td>
 
       <td className={css.col2}>
@@ -34,10 +43,9 @@ export default function TableRow({
           type="text"
           value={row.col3 || ""}
           onChange={(e) => updateCell(row.id, "col3", e.target.value)}
-          onBlur={() => {
-            console.log("BLUR FIRED", row.id);
-            onRowBlur(row.id);
-          }}
+          // onBlur={() => {
+          //   onRowBlur(row.id);
+          // }}
           onKeyDown={(e) => handleKeyDown(e, "col3")}
           data-row={row.id}
           data-col="col3"
@@ -48,7 +56,7 @@ export default function TableRow({
         <input
           value={row.col4 ?? ""}
           onChange={(e) => updateCell(row.id, "col4", e.target.value)}
-          onBlur={() => onRowBlur(row)}
+          // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col4")}
           data-row={row.id}
           data-col="col4"
@@ -60,7 +68,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col5}
           onChange={(e) => updateCell(row.id, "col5", e.target.value)}
-          onBlur={() => onRowBlur(row)}
+          // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col5")}
           data-row={row.id}
           data-col="col5"
@@ -74,6 +82,7 @@ export default function TableRow({
         <input
           value={row.col6 || ""}
           onChange={(e) => updateCell(row.id, "col6", e.target.value)}
+          // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col6")}
           data-row={row.id}
           data-col="col6"
@@ -85,6 +94,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col7}
           onChange={(e) => updateCell(row.id, "col7", e.target.value)}
+          // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col7")}
           data-row={row.id}
           data-col="col7"
@@ -99,6 +109,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col8 || ""}
           onChange={(e) => updateCell(row.id, "col8", e.target.value)}
+          // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col8")}
           data-row={row.id}
           data-col="col8"
@@ -121,9 +132,10 @@ export default function TableRow({
             value={row.col9_1 || ""}
             readOnly
             placeholder="Оберіть діагноз"
+            onBlur={() => onRowBlur(row.id)}
             data-row={row.id}
             data-col="col9_1"
-            onClick={() => openDiagnosisModal(row.id, "col9_1", row.col9_1)}
+            onClick={(e) => openDiagnosisModal(e, row.id, "col9_1")}
             onKeyDown={(e) => {
               handleKeyDown(e, "col9_1");
               if (e.key === "Delete" || e.key === "Backspace") {
@@ -140,8 +152,12 @@ export default function TableRow({
               console.log("INPUT 1:", e.target.value);
               updateCell(row.id, "col9_1_tooth", e.target.value);
             }}
+            onBlur={() => onRowBlur(row.id)}
             placeholder="№ зуба"
-            onKeyDown={(e) => handleKeyDown(e, "col9_1_tooth")}
+            onKeyDown={(e) => {
+              console.log("TOOTH KEY:", e.key);
+              handleKeyDown(e, "col9_1_tooth");
+            }}
             data-row={row.id}
             data-col="col9_1_tooth"
           />
@@ -156,9 +172,10 @@ export default function TableRow({
             value={row.col9_2 || ""}
             readOnly
             placeholder="Оберіть діагноз"
+            onBlur={() => onRowBlur(row.id)}
             data-row={row.id}
             data-col="col9_2"
-            onClick={() => openDiagnosisModal(row.id, "col9_2", row.col9_2)}
+            onClick={(e) => openDiagnosisModal(e, row.id, "col9_2")}
             onKeyDown={(e) => {
               handleKeyDown(e, "col9_2");
               if (e.key === "Delete" || e.key === "Backspace") {
@@ -176,6 +193,7 @@ export default function TableRow({
               updateCell(row.id, "col9_2_tooth", e.target.value);
             }}
             placeholder="№ зуба"
+            onBlur={() => onRowBlur(row.id)}
             onKeyDown={(e) => handleKeyDown(e, "col9_2_tooth")}
             data-row={row.id}
             data-col="col9_2_tooth"
@@ -190,6 +208,7 @@ export default function TableRow({
             className={css.myList}
             value={row[`col10_${num}`] || ""}
             onChange={(e) => updateCell(row.id, `col10_${num}`, e.target.value)}
+            onBlur={() => onRowBlur(row.id)}
             onKeyDown={(e) => handleKeyDown(e, `col10_${num}`)}
             data-row={row.id}
             data-col={`col10_${num}`}
@@ -208,6 +227,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col11}
           onChange={(e) => updateCell(row.id, "col11", e.target.value)}
+          onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col11")}
           data-row={row.id}
           data-col="col11"
@@ -223,6 +243,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col12}
           onChange={(e) => updateCell(row.id, "col12", e.target.value)}
+          onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col12")}
           data-row={row.id}
           data-col="col12"
@@ -232,15 +253,6 @@ export default function TableRow({
         </select>
       </td>
 
-      {/* <td className={css.col13}>
-        <input
-          value={row.col13}
-          onChange={(e) => updateCell(row.id, "col13", e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, "col13")}
-          data-row={row.id}
-          data-col="col13"
-        />
-      </td> */}
       <td className={css.col13}>{row.col13}</td>
       <td className={css.col14}>{row.col14}</td>
     </tr>

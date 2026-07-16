@@ -207,12 +207,15 @@ export default function Form039_2_0Page() {
   }, [endDate]);
   return (
     <div className={css.formPage}>
-      <button
-        className={`${css.homeButton} ${css.noPrint}`}
-        onClick={() => navigate("/")}
-      >
-        Головна
-      </button>
+      <div className={css.noPrint} style={{ display: "flex", gap: "10px" }}>
+        <button className={css.homeButton} onClick={() => navigate("/")}>
+          Головна
+        </button>
+
+        <button className={css.homeButton} onClick={() => navigate("/form037")}>
+          Форма 037/0
+        </button>
+      </div>
       <h3 className={`${css.titleForm39} ${css.noPrint}`}>
         Зведений щоденний облік роботи лікаря
       </h3>

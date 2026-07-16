@@ -49,17 +49,14 @@ export default function Home() {
             Ведення форми 037/0 та автоматичне формування звітів 039-2/0
           </p>
           <div className={css.links}>
-            <button
-              className={css.card}
-              onClick={() => navigate("/forma-037/0")}
-            >
+            <button className={css.card} onClick={() => navigate("/form037")}>
               <h3>Форма №037/0</h3>
               <p>Щоденний облік пацієнтів та процедур</p>
             </button>
 
             <button
               className={`${css.card} ${css.mt}`}
-              onClick={() => navigate("/forma-039_2_0")}
+              onClick={() => navigate("/form039")}
             >
               <h3>Форма №039-2/0</h3>
               <p>Автоматичне формування щоденного звіту</p>

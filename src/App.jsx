@@ -16,7 +16,7 @@ function App() {
       {/* <Route path="/register" element={<RegistrationPage />} /> */}
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route
-        path="/forma-037/:id"
+        path="/form037"
         element={
           <PrivateRoute>
             <Forms037 />
@@ -25,7 +25,7 @@ function App() {
       />
 
       <Route
-        path="/forma-039_2_0"
+        path="/form039"
         element={
           <PrivateRoute>
             <FormPageForm039_2_0Page />

@@ -17,10 +17,6 @@ body {
   padding: 10px 10px;
 }
 .homeButton {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-
   padding: 8px 18px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.15);

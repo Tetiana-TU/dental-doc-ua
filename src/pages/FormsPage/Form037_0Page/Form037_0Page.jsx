@@ -17,9 +17,15 @@ function Form037() {
 
   return (
     <div className={css.pageWrapper}>
-      <button className={css.homeButton} onClick={() => navigate("/")}>
-        Головна
-      </button>
+      <div className={css.noPrint} style={{ display: "flex", gap: "10px" }}>
+        <button className={css.homeButton} onClick={() => navigate("/")}>
+          Головна
+        </button>
+
+        <button className={css.homeButton} onClick={() => navigate("/form039")}>
+          Форма 039-2/0
+        </button>
+      </div>
       <FormHeader />
       <TitleBlock />
       <MedTable />

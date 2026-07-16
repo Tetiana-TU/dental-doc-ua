@@ -116,10 +116,6 @@ table {
   border-top: 2px solid #000;
 }
 .homeButton {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-
   padding: 8px 18px;
 
   border: 1px solid rgba(255, 255, 255, 0.2);

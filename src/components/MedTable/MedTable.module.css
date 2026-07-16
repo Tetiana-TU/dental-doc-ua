@@ -24,6 +24,11 @@ td {
 th {
   font-size: 12px;
 }
+.tableWrapper {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+  overflow-x: auto;
+}
 .medTable {
   table-layout: fixed;
   width: 100%;
@@ -35,7 +40,7 @@ th {
   font-size: 6px;
   position: sticky;
   top: 0;
-  z-index: 2; /* щоб шапка була зверху */
+  z-index: 2;
   text-align: center;
   border-bottom: 2px solid #999;
   padding: 8px;
@@ -92,14 +97,45 @@ select {
 input:focus,
 select:focus {
   outline: none;
-  box-shadow: none;
-  border: none;
+  /* box-shadow: none;
+  border: none; */
+}
+.tableBody td:has(input:focus),
+.tableBody td:has(select:focus) {
+  background: #17345e;
+  box-shadow:
+    inset 0 0 0 2px #00bfff,
+    0 0 8px rgba(0, 191, 255, 0.5);
 }
 .diagWrap input.toothInput:focus,
 .diagWrap select:focus {
   outline: none;
   box-shadow: none;
   border: none;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9998;
+}
+
+.modal {
+  width: 800px;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: #2a2a2a;
+  overflow: hidden;
+}
+
+.modalContent {
+  max-height: 80vh;
+  overflow-y: auto;
 }
 .col2 {
   white-space: nowrap;
@@ -133,9 +169,9 @@ tbody td[contenteditable="true"]:focus {
 .myList {
   background-color: #111;
   color: #ffff;
-  -webkit-appearance: none; /* Chrome, Safari */
-  -moz-appearance: none; /* Firefox */
-  appearance: none; /* стандарт */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .col9 {
