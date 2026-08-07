@@ -128,9 +128,13 @@ router.post("/row", authMiddleware, async (req, res) => {
       uop,
     } = req.body;
 
-    const sqlDate = date ? new Date(date).toISOString().split("T")[0] : null;
+    const sqlDate = date || null;
     const sqlTime = visit_time || null;
-
+    console.log("========== DATE CHECK ==========");
+    console.log("FROM FRONT:", date);
+    console.log("TO SQL:", sqlDate);
+    console.log("TYPE:", typeof date);
+    console.log("===============================");
     const toText = (v) => {
       if (v === undefined || v === null || v === "") return null;
       return String(v);
@@ -217,7 +221,7 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         toText(residence),
         toText(medical_card),
         toText(population_group),
-        toText(visit_type),
+        toText(visit_type || "1"),
         toText(diagnosis_1),
         toInt(diagnosis_1_tooth),
         toText(diagnosis_2),
@@ -267,10 +271,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
         return {
           ...r,
-          date:
-            r.date instanceof Date
-              ? r.date.toISOString().split("T")[0]
-              : String(r.date),
+          date: r.date,
           col9_1_tooth: r.diagnosis_1_tooth,
           col9_2_tooth: r.diagnosis_2_tooth,
           col10_1: proc[0] || "",

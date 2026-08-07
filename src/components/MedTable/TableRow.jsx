@@ -66,7 +66,7 @@ export default function TableRow({
       <td className={css.col5}>
         <select
           className={css.myList}
-          value={row.col5}
+          value={row.col5 || "1"}
           onChange={(e) => updateCell(row.id, "col5", e.target.value)}
           // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col5")}

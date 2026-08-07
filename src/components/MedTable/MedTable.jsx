@@ -339,7 +339,7 @@ function createEmptyRow({ day, month, year, patientId, isNew = false }) {
     col2: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
     col3: "",
     col4: "",
-    col5: "",
+    col5: "1",
     col6: "",
     col7: "місто",
     col8: "",
@@ -452,7 +452,11 @@ export default function MedTable() {
       const now = new Date();
 
       const normalized = data.map((r) => {
-        const proc = r.procedures ? JSON.parse(r.procedures) : [];
+        const proc = Array.isArray(r.procedures)
+          ? r.procedures
+          : r.procedures
+            ? JSON.parse(r.procedures)
+            : [];
 
         return {
           id: r.id ?? r._id ?? crypto.randomUUID(),

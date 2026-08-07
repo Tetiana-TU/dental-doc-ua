@@ -9,7 +9,9 @@ const router = express.Router();
 router.get("/", authMiddleware, async (req, res) => {
   const doctorId = req.doctor.id;
   const { start, end } = req.query;
-
+  console.log("doctorId =", doctorId);
+  console.log("start =", start);
+  console.log("end =", end);
   const result = await pool.query(
     `
         SELECT *
@@ -20,7 +22,8 @@ ORDER BY date, visit_time
         `,
     [doctorId, start, end],
   );
-
+  console.log("ROWS FOUND =", result.rows.length);
+  console.log(result.rows);
   res.json(result.rows);
 });
 export default router;
