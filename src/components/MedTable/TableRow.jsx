@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import css from "./MedTable.module.css";
 
 export default function TableRow({
@@ -9,21 +9,16 @@ export default function TableRow({
   onKeyDownCustom,
   procedureOptions,
   openDiagnosisModal,
+  openProcedureModal,
+
   onRowBlur,
 }) {
-  console.log("TABLEROW", row.id, row.col9_1, row.col9_2);
-
   const handleKeyDown = (e, cellKey) => {
-    console.log("KEY CHECK:", {
-      key: e.key,
-      rowId: row.id,
-      cellKey,
-    });
-
     if (onKeyDownCustom) {
       onKeyDownCustom(e, row.id, cellKey);
     }
   };
+
   return (
     <tr ref={rowRef} className={css.inputRow}>
       <td className={css.col1}>{rowNumber}</td>
@@ -149,13 +144,11 @@ export default function TableRow({
             className={css.toothInput}
             value={row.col9_1_tooth || ""}
             onChange={(e) => {
-              console.log("INPUT 1:", e.target.value);
               updateCell(row.id, "col9_1_tooth", e.target.value);
             }}
             onBlur={() => onRowBlur(row.id)}
             placeholder="№ зуба"
             onKeyDown={(e) => {
-              console.log("TOOTH KEY:", e.key);
               handleKeyDown(e, "col9_1_tooth");
             }}
             data-row={row.id}
@@ -189,7 +182,6 @@ export default function TableRow({
             className={css.toothInput}
             value={row.col9_2_tooth || ""}
             onChange={(e) => {
-              console.log("INPUT 2:", e.target.value);
               updateCell(row.id, "col9_2_tooth", e.target.value);
             }}
             placeholder="№ зуба"
@@ -200,9 +192,43 @@ export default function TableRow({
           />
         </div>
       </td>
-
       {/* ПРОЦЕДУРИ */}
-      {[1, 2, 3].map((num) => (
+      {[1, 2, 3].map((num) => {
+        const field = `col10_${num}`;
+
+        const selectedOption = procedureOptions.find(
+          (opt) => opt.value === row[field],
+        );
+
+        return (
+          <td key={num} className={css[`col10${num}`]}>
+            <div
+              className={css.procedureSelect}
+              tabIndex={0}
+              data-row={row.id}
+              data-col={field}
+              onClick={(e) => {
+                openProcedureModal(e, row.id, field);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  openProcedureModal(e, row.id, field);
+                  return;
+                }
+
+                handleKeyDown(e, row.id, field);
+              }}
+            >
+              {selectedOption?.label || "—"}
+            </div>
+          </td>
+        );
+      })}
+      {/*ПРОЦЕДУРИ*/}
+      {/* {[1, 2, 3].map((num) => (
         <td key={num} className={css[`col10${num}`]}>
           <select
             className={css.myList}
@@ -220,7 +246,7 @@ export default function TableRow({
             ))}
           </select>
         </td>
-      ))}
+      ))} */}
 
       <td className={css.col11}>
         <select

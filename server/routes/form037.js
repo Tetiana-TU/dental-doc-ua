@@ -57,7 +57,6 @@ router.post("/", authMiddleware, async (req, res) => {
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
     );
 
-    console.log("DATE FROM FRONT:", date);
     const sqlDate = toSqlDate(date);
     const sqlTime = visit_time ? String(visit_time) : null;
 
@@ -103,8 +102,6 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.post("/row", authMiddleware, async (req, res) => {
   try {
-    console.log("🔥 RAW BODY:", req.body);
-    console.log("visit_type FROM BODY =", req.body.visit_type);
     const doctorId = req.doctor.id;
 
     const {
@@ -130,11 +127,7 @@ router.post("/row", authMiddleware, async (req, res) => {
 
     const sqlDate = date || null;
     const sqlTime = visit_time || null;
-    console.log("========== DATE CHECK ==========");
-    console.log("FROM FRONT:", date);
-    console.log("TO SQL:", sqlDate);
-    console.log("TYPE:", typeof date);
-    console.log("===============================");
+
     const toText = (v) => {
       if (v === undefined || v === null || v === "") return null;
       return String(v);
@@ -165,7 +158,7 @@ router.post("/row", authMiddleware, async (req, res) => {
     const cleanProcedures = JSON.stringify(
       Array.isArray(procedures) ? procedures.filter(Boolean) : [],
     );
-    console.log("SAVE VISIT TYPE:", visit_type);
+
     const result = await pool.query(
       `
       INSERT INTO form_037 (
@@ -235,13 +228,12 @@ diagnosis_2_tooth = EXCLUDED.diagnosis_2_tooth,
         toNumber(uop),
       ],
     );
-    console.log("RETURNING:", result.rows[0]);
+
     res.json({
       ok: true,
       row: result.rows[0],
     });
   } catch (err) {
-    console.error("❌ ROW ERROR:", err);
     return res.status(500).json({
       message: "Internal server error",
       error: err.message,

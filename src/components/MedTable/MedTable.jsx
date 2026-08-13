@@ -25,6 +25,7 @@ function formatDate(value) {
 function DiagnosisTree({
   data,
   onSelect,
+  onEscape,
   openNodes,
   toggleNode,
   selectedCode,
@@ -83,6 +84,14 @@ function DiagnosisTree({
         }
 
         onSelect(node);
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        onEscape();
+
+        return;
       }
 
       if (e.key === "ArrowRight") {
@@ -178,7 +187,138 @@ function DiagnosisTree({
     </div>
   );
 }
+function ProcedureTree({
+  data,
+  onSelect,
+  onEscape,
+  selectedValue,
+  activeIndex,
+  setActiveIndex,
+  treeRef,
+}) {
+  const itemRefs = useRef([]);
 
+  // Тут flatNodes — це список тільки реальних процедур,
+  // без заголовків "ТЕРАПІЯ" / "ХІРУРГІЯ"
+  const flatNodes = React.useMemo(() => {
+    return data.filter((item) => !item.disabled && item.value);
+  }, [data]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!treeRef.current?.contains(document.activeElement)) {
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setActiveIndex((prev) => Math.min(prev + 1, flatNodes.length - 1));
+
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
+
+        return;
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const option = flatNodes[activeIndex];
+
+        if (!option) return;
+
+        onSelect(option);
+
+        return;
+      }
+    };
+
+    document.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [activeIndex, flatNodes, onSelect, onEscape, setActiveIndex, treeRef]);
+
+  useLayoutEffect(() => {
+    treeRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const el = itemRefs.current[activeIndex];
+
+    if (el) {
+      el.scrollIntoView({
+        block: "nearest",
+        behavior: "instant",
+      });
+    }
+  }, [activeIndex]);
+
+  return (
+    <div ref={treeRef} tabIndex={0} className={css.procedureTree}>
+      {data.map((option, index) => {
+        // Заголовки груп
+        if (option.disabled) {
+          return (
+            <div key={`group-${index}`} className={css.procedureGroup}>
+              {option.label}
+            </div>
+          );
+        }
+
+        if (!option.value) return null;
+
+        const activeNodeIndex = flatNodes.findIndex(
+          (item) => item.value === option.value,
+        );
+
+        const isActive = activeNodeIndex === activeIndex;
+
+        const isSelected = selectedValue === option.value;
+
+        return (
+          <div
+            key={option.value}
+            ref={(el) => {
+              itemRefs.current[activeNodeIndex] = el;
+            }}
+            className={css.procedureOption}
+            style={{
+              background: isActive
+                ? "#cce5ff"
+                : isSelected
+                  ? "#ffe08a"
+                  : "transparent",
+
+              color: "#000",
+              cursor: "pointer",
+              padding: "6px 10px",
+              borderRadius: "3px",
+            }}
+            onMouseEnter={() => {
+              setActiveIndex(activeNodeIndex);
+            }}
+            onClick={() => {
+              onSelect(option);
+            }}
+          >
+            {option.label}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 const buildOpenNodesToDepth = (data, maxDepth = 2, depth = 0, acc = {}) => {
   if (depth >= maxDepth) return acc;
 
@@ -378,6 +518,14 @@ export default function MedTable() {
     top: 0,
     left: 0,
   });
+  const [procedureModal, setProcedureModal] = useState({
+    open: false,
+    rowId: null,
+    field: null,
+  });
+  const [procedureActiveIndex, setProcedureActiveIndex] = useState(0);
+  const procedureRef = useRef(null);
+  const procedureTreeRef = useRef(null);
 
   const [openNodes, setOpenNodes] = useState({});
   const [selectedDiagnosis, setSelectedDiagnosis] = useState({
@@ -423,6 +571,34 @@ export default function MedTable() {
       document.removeEventListener("keydown", handleEsc);
     };
   }, [modalState.open]);
+  useEffect(() => {
+    if (!procedureModal.open) return;
+
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setProcedureModal({
+          open: false,
+          rowId: null,
+          field: null,
+        });
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [procedureModal.open]);
+
+  useEffect(() => {
+    if (!procedureModal.open) return;
+
+    requestAnimationFrame(() => {
+      procedureTreeRef.current?.focus();
+    });
+  }, [procedureModal.open]);
+
   useEffect(() => {
     if (todayRef.current) {
       todayRef.current.scrollIntoView({
@@ -542,7 +718,6 @@ export default function MedTable() {
       }
 
       setRows(resultRows);
-      console.log("RESULT ROWS:", resultRows);
 
       setLoaded(true);
     };
@@ -557,18 +732,9 @@ export default function MedTable() {
   };
 
   const saveRow = async (row) => {
-    console.log("saveRow:", row);
     try {
-      console.log("saveRow()");
-      console.log("Saving row:", row);
-
       const token = localStorage.getItem("token");
-      console.log({
-        diagnosis_1: row.col9_1,
-        diagnosis_1_tooth: toIntOrNull(row.col9_1_tooth),
-        diagnosis_2: row.col9_2,
-        diagnosis_2_tooth: toIntOrNull(row.col9_2_tooth),
-      });
+
       const body = {
         patient_id: row.patient_id,
         date: row.colDate,
@@ -592,13 +758,6 @@ export default function MedTable() {
         uop: row.col14,
       };
 
-      console.log("SAVE DIAG CHECK:", {
-        id: row.id,
-        col9_1: row.col9_1,
-        col9_2: row.col9_2,
-        tooth1: row.col9_1_tooth,
-        tooth2: row.col9_2_tooth,
-      });
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/form037/row`,
         {
@@ -611,10 +770,8 @@ export default function MedTable() {
         },
       );
 
-      console.log("STATUS:", res.status);
-
       const data = await res.json();
-      console.log(data);
+
       if (data.row) {
         setRows((prev) =>
           prev.map((r) =>
@@ -642,8 +799,6 @@ export default function MedTable() {
     }
   };
   const handleRowBlur = (rowId) => {
-    console.log("BLUR ROW ID:", rowId);
-
     setRows((prev) => {
       const row = prev.find((r) => String(r.id) === String(rowId));
 
@@ -661,50 +816,66 @@ export default function MedTable() {
   };
 
   const confirmPatient = (rowId) => {
-    let rowToSave;
+    let newRowId = null;
 
     setRows((prev) => {
-      const row = prev.find((r) => r.id === rowId);
+      const rowIndex = prev.findIndex((r) => r.id === rowId);
 
-      if (!row) return prev;
+      if (rowIndex === -1) return prev;
 
-      const newRow = {
+      const row = prev[rowIndex];
+
+      const now = new Date();
+
+      const updatedRow = {
         ...row,
         isNew: false,
+        col2:
+          row.isNew && row.col3?.trim()
+            ? `${String(now.getHours()).padStart(2, "0")}:${String(
+                now.getMinutes(),
+              ).padStart(2, "0")}`
+            : row.col2,
       };
 
-      if (row.isNew && row.col3?.trim()) {
-        const now = new Date();
+      // Зберігаємо актуальний рядок
+      saveRow(updatedRow);
 
-        newRow.col2 =
-          `${String(now.getHours()).padStart(2, "0")}:` +
-          `${String(now.getMinutes()).padStart(2, "0")}`;
-      }
+      // Створюємо НОВИЙ порожній рядок одразу після поточного
+      const newRow = createEmptyRow({
+        day: now.getDate(),
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
+        patientId: crypto.randomUUID(),
+        isNew: true,
+      });
 
-      // зберігаємо саме актуальний рядок
-      saveRow(newRow);
+      newRowId = newRow.id;
 
-      const updated = prev.map((r) => (r.id === rowId ? newRow : r));
+      const updated = [...prev];
 
-      const last = updated[updated.length - 1];
+      // Оновлюємо поточний рядок
+      updated[rowIndex] = updatedRow;
 
-      if (last.id === rowId && last.col3?.trim()) {
-        updated.push(
-          createEmptyRow({
-            day: new Date().getDate(),
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
-            patientId: crypto.randomUUID(),
-            isNew: true,
-          }),
-        );
-      }
-      console.log("UPDATED ROWS:", updated);
+      // Вставляємо новий рядок після нього
+      updated.splice(rowIndex + 1, 0, newRow);
+
       return updated;
     });
+
+    // Після ререндеру ставимо курсор
+    // у 3-тю клітинку нового рядка
+    setTimeout(() => {
+      if (!newRowId) return;
+
+      const input = document.querySelector(
+        `input[data-row="${newRowId}"][data-col="col3"]`,
+      );
+
+      input?.focus();
+    }, 0);
   };
   const updateCell = (id, key, value) => {
-    console.log("UPDATE:", { id, key, value });
     setRows((prev) => {
       const updated = prev.map((r) => {
         if (String(r.id) !== String(id)) return r;
@@ -713,7 +884,7 @@ export default function MedTable() {
           ...r,
           [key]: value,
         };
-        console.log("ROW BEFORE:", r);
+
         if (key === "col3" && r.isNew && value.trim()) {
           const now = new Date();
 
@@ -736,12 +907,12 @@ export default function MedTable() {
 
           newRow.col14 = sum;
         }
-        console.log("NEW ROW:", newRow);
+
         return newRow;
       });
 
       const last = updated[updated.length - 1];
-      console.log("UPDATED ARRAY:", updated);
+
       return updated;
     });
   };
@@ -751,8 +922,6 @@ export default function MedTable() {
       const token = localStorage.getItem("token");
       const url = `${import.meta.env.VITE_API_URL}/api/form037/${id}`;
 
-      console.log("DELETE URL:", url);
-
       const res = await fetch(url, {
         method: "DELETE",
         headers: {
@@ -761,9 +930,6 @@ export default function MedTable() {
       });
 
       const data = await res.json().catch(() => null);
-
-      console.log("STATUS:", res.status);
-      console.log("DATA:", data);
 
       if (!res.ok) {
         console.error("DELETE FAILED:", data);
@@ -792,7 +958,49 @@ export default function MedTable() {
   const toggleNode = (code) => {
     setOpenNodes((p) => ({ ...p, [code]: !p[code] }));
   };
+  const handleDiagnosisEscape = () => {
+    const { rowId, field } = selectedDiagnosis;
 
+    // Закриваємо вікно
+    setModalState({
+      open: false,
+      rowId: null,
+      field: null,
+    });
+
+    setSelectedDiagnosis({
+      rowId: null,
+      field: null,
+      code: null,
+    });
+
+    if (!rowId || !field) return;
+
+    // Після Escape з діагнозу переходимо на номер зуба
+    if (field === "col9_1") {
+      requestAnimationFrame(() => {
+        const input = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col9_1_tooth"]`,
+        );
+
+        input?.focus();
+      });
+
+      return;
+    }
+
+    if (field === "col9_2") {
+      setProcedureActiveIndex(0);
+
+      setProcedureModal({
+        open: true,
+        rowId,
+        field: "col10_1",
+      });
+
+      return;
+    }
+  };
   const selectDiagnosis = (node) => {
     console.log("selectDiagnosis", node);
 
@@ -800,12 +1008,6 @@ export default function MedTable() {
     const field = selectedDiagnosis.field;
 
     if (!rowId || !field) return;
-
-    console.log("SELECT:", {
-      rowId,
-      field,
-      code: node.code,
-    });
 
     // оновлюємо клітинку
     updateCell(rowId, field, node.code);
@@ -847,12 +1049,6 @@ export default function MedTable() {
     const rect = event.currentTarget.getBoundingClientRect();
     const currentRow = rows.find((r) => String(r.id) === String(rowId));
 
-    console.log("OPEN MODAL:", {
-      rowId,
-      type: typeof rowId,
-      field,
-    });
-
     const currentValue = currentRow?.[field];
 
     let open = {};
@@ -884,6 +1080,91 @@ export default function MedTable() {
       treeRef.current?.focus();
     }, 100);
   };
+  const openProcedureModal = (event, rowId, field) => {
+    const currentRow = rows.find((r) => String(r.id) === String(rowId));
+
+    const currentValue = currentRow?.[field];
+
+    const currentIndex = procedureOptions.findIndex(
+      (opt) => !opt.disabled && opt.value === currentValue,
+    );
+
+    setProcedureActiveIndex(
+      currentIndex >= 0
+        ? procedureOptions
+            .filter((opt) => !opt.disabled && opt.value)
+            .findIndex((opt) => opt.value === currentValue)
+        : 0,
+    );
+    setProcedureModal({
+      open: true,
+      rowId,
+      field,
+    });
+  };
+  const procedureFields = ["col10_1", "col10_2", "col10_3"];
+  const goToNextProcedure = (rowId, currentField) => {
+    const currentIndex = procedureFields.indexOf(currentField);
+
+    // Є наступна процедура
+    if (currentIndex >= 0 && currentIndex < procedureFields.length - 1) {
+      const nextField = procedureFields[currentIndex + 1];
+
+      const nextInput = document.querySelector(
+        `[data-row="${rowId}"][data-col="${nextField}"]`,
+      );
+
+      if (!nextInput) return;
+
+      nextInput.focus();
+
+      requestAnimationFrame(() => {
+        openProcedureModal(
+          {
+            currentTarget: nextInput,
+          },
+          rowId,
+          nextField,
+        );
+      });
+
+      return;
+    }
+
+    // Після третьої процедури → знеболювання
+    const anesthesiaInput = document.querySelector(
+      `[data-row="${rowId}"][data-col="col11"]`,
+    );
+
+    anesthesiaInput?.focus();
+  };
+  const closeProcedureModal = () => {
+    setProcedureModal({
+      open: false,
+      rowId: null,
+      field: null,
+    });
+  };
+
+  const selectProcedure = (option) => {
+    if (!option || option.disabled || !option.value) return;
+
+    const { rowId, field } = procedureModal;
+
+    updateCell(rowId, field, option.value);
+
+    setProcedureModal({
+      open: false,
+      rowId: null,
+      field: null,
+    });
+
+    // Після вибору автоматично переходимо вправо
+    requestAnimationFrame(() => {
+      goToNextProcedure(rowId, field);
+    });
+  };
+
   const grouped = rows.reduce((acc, row) => {
     if (!row.colDate) return acc;
 
@@ -908,27 +1189,14 @@ export default function MedTable() {
   }
 
   const handleKeyDown = (e, rowId, cellKey) => {
-    console.log("KEY CHECK:", {
-      key: e.key,
-      rowId,
-      cellKey,
-    });
-
     if (e.key === "Enter") {
       console.log("TABLE", cellKey);
       e.preventDefault();
       if (cellKey === "col12") {
         e.preventDefault();
+        e.stopPropagation();
 
         confirmPatient(rowId);
-
-        setTimeout(() => {
-          const inputs = document.querySelectorAll('input[data-col="col3"]');
-
-          if (inputs.length > 0) {
-            inputs[inputs.length - 1].focus();
-          }
-        }, 100);
 
         return;
       }
@@ -956,6 +1224,34 @@ export default function MedTable() {
 
           setTimeout(() => {
             treeRef.current?.focus();
+          }, 50);
+        }, 50);
+
+        return;
+      }
+      if (cellKey === "col9_2_tooth") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const procedureInput = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col10_1"]`,
+        );
+
+        if (!procedureInput) return;
+
+        procedureInput.focus();
+
+        setTimeout(() => {
+          openProcedureModal(
+            {
+              currentTarget: procedureInput,
+            },
+            rowId,
+            "col10_1",
+          );
+
+          setTimeout(() => {
+            procedureTreeRef.current?.focus();
           }, 50);
         }, 50);
 
@@ -1010,7 +1306,6 @@ export default function MedTable() {
 
       const cellIndex = colKeys.indexOf(cellKey);
       if (cellIndex === -1) {
-        console.warn("UNKNOWN CELL:", cellKey);
         return;
       }
       let nextRowIndex = rowIndex;
@@ -1044,7 +1339,7 @@ export default function MedTable() {
 
     const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
     if (!arrowKeys.includes(e.key)) return;
-    // Не перехоплюємо стрілку всередині тексту
+
     if (
       e.target instanceof HTMLInputElement &&
       (e.key === "ArrowLeft" || e.key === "ArrowRight")
@@ -1254,6 +1549,7 @@ export default function MedTable() {
                         deleteRow={() => deleteRow(row.id)}
                         procedureOptions={procedureOptions}
                         openDiagnosisModal={openDiagnosisModal}
+                        openProcedureModal={openProcedureModal}
                         onRowBlur={handleRowBlur}
                         onKeyDownCustom={handleKeyDown}
                       />,
@@ -1309,6 +1605,43 @@ export default function MedTable() {
                 setActiveIndex={setTreeActiveIndex}
                 treeRef={treeRef}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {procedureModal.open && (
+        <div className={css.overlay} onMouseDown={closeProcedureModal}>
+          <div
+            ref={procedureRef}
+            className={css.modal}
+            tabIndex={0}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ outline: "none" }}
+          >
+            <div className={css.modalContent}>
+              <div className={css.procedureModalHeader}>
+                <span>Вибір процедури</span>
+
+                <button type="button" onClick={closeProcedureModal}>
+                  ×
+                </button>
+              </div>
+
+              <div className={css.procedureModalContent}>
+                <ProcedureTree
+                  data={procedureOptions}
+                  onSelect={selectProcedure}
+                  selectedValue={
+                    rows.find(
+                      (r) => String(r.id) === String(procedureModal.rowId),
+                    )?.[procedureModal.field]
+                  }
+                  activeIndex={procedureActiveIndex}
+                  setActiveIndex={setProcedureActiveIndex}
+                  treeRef={procedureTreeRef}
+                />
+              </div>
             </div>
           </div>
         </div>

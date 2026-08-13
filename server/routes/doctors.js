@@ -9,10 +9,10 @@ router.get("/", (req, res) => {
 
 router.post("/register", async (req, res) => {
   console.log("🔥 REGISTER HIT");
-  console.log(req.body);
+
   try {
     const { fullName, phone, password } = req.body;
-    console.log("VALUES:", fullName, phone, password);
+    console.log(fullName, phone, password);
 
     const result = await pool.query(
       `INSERT INTO doctors (full_name, phone, password)
