@@ -193,7 +193,7 @@ function PricesPage() {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:3001/api/prices", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/prices`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -234,17 +234,20 @@ function PricesPage() {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:3001/api/prices/custom", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/prices/custom`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: newServiceName,
+            price: Number(newServicePrice) || 0,
+          }),
         },
-        body: JSON.stringify({
-          name: newServiceName,
-          price: Number(newServicePrice) || 0,
-        }),
-      });
+      );
 
       const data = await res.json();
 
@@ -271,12 +274,15 @@ function PricesPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`http://localhost:3001/api/prices/custom/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/prices/custom/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       const data = await res.json();
 

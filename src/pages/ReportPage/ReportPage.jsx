@@ -30,7 +30,7 @@ function ReportPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `http://localhost:3001/api/patients/report?month=${month}&year=${year}`,
+        `${import.meta.env.VITE_API_URL}/api/patients/report?month=${month}&year=${year}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -56,11 +56,14 @@ function ReportPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:3001/api/prices/custom", {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/prices/custom`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       const data = await res.json();
 
@@ -81,7 +84,7 @@ function ReportPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `http://localhost:3001/api/patients/${patient.patient_id}/services`,
+        `${import.meta.env.VITE_API_URL}/api/patients/${patient.patient_id}/services`,
         {
           method: "POST",
           headers: {
@@ -120,7 +123,7 @@ function ReportPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `http://localhost:3001/api/patients/services/${serviceId}`,
+        `${import.meta.env.VITE_API_URL}/api/patients/services/${serviceId}`,
         {
           method: "DELETE",
           headers: {
