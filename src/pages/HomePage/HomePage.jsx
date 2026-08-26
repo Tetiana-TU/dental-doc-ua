@@ -61,6 +61,20 @@ export default function Home() {
               <h3>Форма №039-2/0</h3>
               <p>Автоматичне формування щоденного звіту</p>
             </button>
+            <button
+              className={`${css.card} ${css.mt}`}
+              onClick={() => navigate("/prices")}
+            >
+              <h3>Ціни / Послуги</h3>
+              <p>Ціни процедур та додаткові послуги</p>
+            </button>
+            <button
+              className={`${css.card} ${css.mt}`}
+              onClick={() => navigate("/report")}
+            >
+              <h3>Фінансовий звіт</h3>
+              <p>Процедури, додаткові послуги та суми</p>
+            </button>
           </div>
         </div>
       </section>

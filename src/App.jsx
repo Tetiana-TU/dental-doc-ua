@@ -6,6 +6,8 @@ import FormPageForm039_2_0Page from "./pages/FormsPage/Form039_2_0Page/Form039_2
 import RegistrationPage from "./pages/RegistrationPage/RegistrationPage.jsx";
 import { useEffect } from "react";
 import PrivateRoute from "./components/PrivateRoute.jsx";
+import PricesPage from "./pages/PricesPage/PricesPage.jsx";
+import ReportPage from "./pages/ReportPage/ReportPage.jsx";
 // import Layout from "./components/Layout/Layout";
 function App() {
   return (
@@ -29,6 +31,22 @@ function App() {
         element={
           <PrivateRoute>
             <FormPageForm039_2_0Page />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/prices"
+        element={
+          <PrivateRoute>
+            <PricesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/report"
+        element={
+          <PrivateRoute>
+            <ReportPage />
           </PrivateRoute>
         }
       />

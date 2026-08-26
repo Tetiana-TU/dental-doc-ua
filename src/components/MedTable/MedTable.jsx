@@ -606,7 +606,7 @@ export default function MedTable() {
         block: "center",
       });
     }
-  }, [rows]);
+  }, []);
   useEffect(() => {
     const load = async () => {
       const token = localStorage.getItem("token");
@@ -661,6 +661,14 @@ export default function MedTable() {
           col14: r.uop || 0,
         };
       });
+      console.table(
+        normalized.map((r) => ({
+          id: r.id,
+          date: r.colDate,
+          time: r.col2,
+          patient: r.col3,
+        })),
+      );
       const day =
         selectedMonth === now.getMonth() + 1 &&
         selectedYear === now.getFullYear()
@@ -816,65 +824,65 @@ export default function MedTable() {
     });
   };
 
-  const confirmPatient = (rowId) => {
-    let newRowId = null;
+  const confirmPatient = async (rowId) => {
+    const currentRow = rows.find((r) => String(r.id) === String(rowId));
 
-    setRows((prev) => {
-      const rowIndex = prev.findIndex((r) => r.id === rowId);
+    if (!currentRow) return;
 
-      if (rowIndex === -1) return prev;
+    const now = new Date();
 
-      const row = prev[rowIndex];
+    // Оновлюємо поточний рядок
+    const updatedRow = {
+      ...currentRow,
+      isNew: false,
+      col2:
+        currentRow.isNew && currentRow.col3?.trim()
+          ? `${String(now.getHours()).padStart(2, "0")}:${String(
+              now.getMinutes(),
+            ).padStart(2, "0")}`
+          : currentRow.col2,
+    };
 
-      const now = new Date();
+    // Спочатку показуємо оновлений рядок
+    setRows((prev) =>
+      prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
+    );
 
-      const updatedRow = {
-        ...row,
-        isNew: false,
-        col2:
-          row.isNew && row.col3?.trim()
-            ? `${String(now.getHours()).padStart(2, "0")}:${String(
-                now.getMinutes(),
-              ).padStart(2, "0")}`
-            : row.col2,
-      };
+    // Зберігаємо поточний рядок ОКРЕМО
+    await saveRow(updatedRow);
 
-      // Зберігаємо актуальний рядок
-      saveRow(updatedRow);
+    // НОВИЙ рядок отримує ДАТУ ПОТОЧНОГО РЯДКА
+    const [year, month, day] = currentRow.colDate.split("-").map(Number);
 
-      // Створюємо НОВИЙ порожній рядок одразу після поточного
-      const newRow = createEmptyRow({
-        day: now.getDate(),
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
-        patientId: crypto.randomUUID(),
-        isNew: true,
-      });
-
-      newRowId = newRow.id;
-
-      const updated = [...prev];
-
-      // Оновлюємо поточний рядок
-      updated[rowIndex] = updatedRow;
-
-      // Вставляємо новий рядок після нього
-      updated.splice(rowIndex + 1, 0, newRow);
-
-      return updated;
+    const newRow = createEmptyRow({
+      day,
+      month,
+      year,
+      patientId: crypto.randomUUID(),
+      isNew: true,
     });
 
-    // Після ререндеру ставимо курсор
-    // у 3-тю клітинку нового рядка
-    setTimeout(() => {
-      if (!newRowId) return;
+    // Додаємо тільки один новий рядок
+    setRows((prev) => {
+      const index = prev.findIndex((r) => String(r.id) === String(rowId));
 
+      if (index === -1) return prev;
+
+      const result = [...prev];
+
+      result.splice(index + 1, 0, newRow);
+
+      return result;
+    });
+
+    // Фокус на ПІБ нового рядка
+    requestAnimationFrame(() => {
       const input = document.querySelector(
-        `input[data-row="${newRowId}"][data-col="col3"]`,
+        `input[data-row="${newRow.id}"][data-col="col3"]`,
       );
 
       input?.focus();
-    }, 0);
+    });
   };
   const updateCell = (id, key, value) => {
     setRows((prev) => {

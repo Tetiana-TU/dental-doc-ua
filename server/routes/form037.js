@@ -247,11 +247,13 @@ router.get("/", authMiddleware, async (req, res) => {
     const { month, year } = req.query;
 
     const result = await pool.query(
-      `SELECT * FROM form_037
-       WHERE doctor_id = $1
-       AND EXTRACT(MONTH FROM date::date) = $2
-       AND EXTRACT(YEAR FROM date::date) = $3
-       ORDER BY date ASC, visit_time ASC`,
+      `SELECT *,
+          date::text AS date_text
+   FROM form_037
+   WHERE doctor_id = $1
+   AND EXTRACT(MONTH FROM date) = $2
+   AND EXTRACT(YEAR FROM date) = $3
+   ORDER BY date ASC, visit_time ASC`,
       [doctorId, month, year],
     );
 
@@ -263,7 +265,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
         return {
           ...r,
-          date: r.date,
+          date: r.date_text,
           col9_1_tooth: r.diagnosis_1_tooth,
           col9_2_tooth: r.diagnosis_2_tooth,
           col10_1: proc[0] || "",

@@ -269,7 +269,7 @@ export default function TableRow({
           className={css.myList}
           value={row.col12}
           onChange={(e) => updateCell(row.id, "col12", e.target.value)}
-          onBlur={() => onRowBlur(row.id)}
+          // onBlur={() => onRowBlur(row.id)}
           onKeyDown={(e) => handleKeyDown(e, "col12")}
           data-row={row.id}
           data-col="col12"

@@ -1,0 +1,59 @@
+.page {
+  padding: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page h1 {
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  color: #222;
+}
+
+.table th {
+  background: #5b6572;
+  color: white;
+}
+
+.table td:nth-child(2) {
+  width: 180px;
+}
+
+.table input {
+  width: 120px;
+  padding: 7px;
+  box-sizing: border-box;
+  color: #222;
+  background: #fff;
+}
+
+.table button {
+  padding: 7px 15px;
+  cursor: pointer;
+}
+.homeButton {
+  padding: 8px 20px;
+  margin-bottom: 20px;
+  border: none;
+  border-radius: 5px;
+  background: #5b6572;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.homeButton:hover {
+  background: #46505c;
+}
