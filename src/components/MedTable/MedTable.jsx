@@ -619,6 +619,7 @@ export default function MedTable() {
       );
 
       const data = await res.json();
+      console.log("FORM037 DATA FROM SERVER:", data);
 
       if (!res.ok) {
         console.error("API ERROR:", data);
@@ -638,7 +639,7 @@ export default function MedTable() {
           id: r.id ?? r._id ?? crypto.randomUUID(),
           isNew: false,
           patient_id: r.patient_id,
-          colDate: r.date,
+          colDate: r.date ? String(r.date).slice(0, 10) : "",
           col2: r.visit_time ? r.visit_time.slice(0, 5) : "",
           col3: r.patient_name || "",
           col4: r.age || "",
