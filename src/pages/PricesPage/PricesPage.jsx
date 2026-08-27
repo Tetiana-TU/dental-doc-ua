@@ -123,11 +123,14 @@ function PricesPage() {
         // Завантаження цін процедур
         // -------------------------
 
-        const pricesRes = await fetch("http://localhost:3001/api/prices", {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const pricesRes = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/prices`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
 
         const pricesData = await pricesRes.json();
 
@@ -148,7 +151,7 @@ function PricesPage() {
         // -------------------------
 
         const servicesRes = await fetch(
-          "http://localhost:3001/api/prices/custom",
+          `${import.meta.env.VITE_API_URL}/api/prices/custom`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
