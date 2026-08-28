@@ -275,7 +275,33 @@ export default function TableRow({
           value={row.col11}
           onChange={(e) => updateCell(row.id, "col11", e.target.value)}
           onBlur={() => onRowBlur(row.id)}
-          onKeyDown={(e) => handleKeyDown(e, "col11")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+
+              const nextSelect = document.querySelector(
+                `select[data-row="${row.id}"][data-col="col12"]`,
+              );
+
+              if (!nextSelect) return;
+
+              nextSelect.focus();
+
+              requestAnimationFrame(() => {
+                if (typeof nextSelect.showPicker === "function") {
+                  try {
+                    nextSelect.showPicker();
+                  } catch (err) {
+                    // браузер може заборонити програмне відкриття
+                  }
+                }
+              });
+
+              return;
+            }
+
+            handleKeyDown(e, "col11");
+          }}
           data-row={row.id}
           data-col="col11"
         >

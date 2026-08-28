@@ -268,7 +268,7 @@ function ProcedureTree({
   // Тут flatNodes — це список тільки реальних процедур,
   // без заголовків "ТЕРАПІЯ" / "ХІРУРГІЯ"
   const flatNodes = React.useMemo(() => {
-    return data.filter((item) => !item.disabled && item.value);
+    return data.filter((item) => !item.disabled);
   }, [data]);
 
   useEffect(() => {
@@ -350,8 +350,6 @@ function ProcedureTree({
             </div>
           );
         }
-
-        if (!option.value) return null;
 
         const activeNodeIndex = flatNodes.findIndex(
           (item) => item.value === option.value,
@@ -1102,12 +1100,12 @@ export default function MedTable() {
     }
 
     if (field === "col9_2") {
-      setProcedureActiveIndex(0);
+      requestAnimationFrame(() => {
+        const input = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col9_2_tooth"]`,
+        );
 
-      setProcedureModal({
-        open: true,
-        rowId,
-        field: "col10_1",
+        input?.focus();
       });
 
       return;
@@ -1150,23 +1148,11 @@ export default function MedTable() {
     // ДІАГНОЗ 2 → ОДРАЗУ ПРОЦЕДУРА 1
     if (field === "col9_2") {
       requestAnimationFrame(() => {
-        const procedureInput = document.querySelector(
-          `input[data-row="${rowId}"][data-col="col10_1"]`,
+        const toothInput = document.querySelector(
+          `input[data-row="${rowId}"][data-col="col9_2_tooth"]`,
         );
 
-        if (!procedureInput) return;
-
-        procedureInput.focus();
-
-        requestAnimationFrame(() => {
-          openProcedureModal(
-            {
-              currentTarget: procedureInput,
-            },
-            rowId,
-            "col10_1",
-          );
-        });
+        toothInput?.focus();
       });
 
       return;
@@ -1192,7 +1178,7 @@ export default function MedTable() {
     setSelectedDiagnosis({
       rowId: null,
       field: null,
-      code: null,
+      code: node.code,
     });
 
     // ДІАГНОЗ 1 → НОМЕР ЗУБА 1
@@ -1241,7 +1227,7 @@ export default function MedTable() {
     setSelectedDiagnosis({
       rowId: currentRow.id,
       field,
-      code: null,
+      code: currentValue || null,
     });
 
     setModalState({
@@ -1266,11 +1252,9 @@ export default function MedTable() {
     );
 
     setProcedureActiveIndex(
-      currentIndex >= 0
-        ? procedureOptions
-            .filter((opt) => !opt.disabled && opt.value)
-            .findIndex((opt) => opt.value === currentValue)
-        : 0,
+      procedureOptions
+        .filter((opt) => !opt.disabled)
+        .findIndex((opt) => opt.value === currentValue),
     );
     setProcedureModal({
       open: true,
@@ -1308,11 +1292,24 @@ export default function MedTable() {
     }
 
     // Після третьої процедури → знеболювання
+    // Після третьої процедури → відкрити селект 11
     const anesthesiaInput = document.querySelector(
-      `[data-row="${rowId}"][data-col="col11"]`,
+      `select[data-row="${rowId}"][data-col="col11"]`,
     );
 
-    anesthesiaInput?.focus();
+    if (!anesthesiaInput) return;
+
+    anesthesiaInput.focus();
+
+    requestAnimationFrame(() => {
+      if (typeof anesthesiaInput.showPicker === "function") {
+        try {
+          anesthesiaInput.showPicker();
+        } catch (err) {
+          // браузер може заборонити програмне відкриття
+        }
+      }
+    });
   };
   const closeProcedureModal = () => {
     setProcedureModal({
@@ -1323,11 +1320,12 @@ export default function MedTable() {
   };
 
   const selectProcedure = (option) => {
-    if (!option || option.disabled || !option.value) return;
+    if (!option || option.disabled) return;
 
     const { rowId, field } = procedureModal;
 
-    updateCell(rowId, field, option.value);
+    // Якщо вибрано "—", зберігаємо порожнє значення
+    updateCell(rowId, field, option.value || "");
 
     setProcedureModal({
       open: false,
@@ -1335,12 +1333,11 @@ export default function MedTable() {
       field: null,
     });
 
-    // Після вибору автоматично переходимо вправо
+    // Переходимо до наступного поля
     requestAnimationFrame(() => {
       goToNextProcedure(rowId, field);
     });
   };
-
   const grouped = rows.reduce((acc, row) => {
     if (!row.colDate) return acc;
 
@@ -1411,7 +1408,7 @@ export default function MedTable() {
 
         requestAnimationFrame(() => {
           const procedureInput = document.querySelector(
-            `input[data-row="${rowId}"][data-col="col10_1"]`,
+            `[data-row="${rowId}"][data-col="col10_1"]`,
           );
 
           if (!procedureInput) {
@@ -1598,7 +1595,7 @@ export default function MedTable() {
     e.stopPropagation();
 
     const procedureInput = document.querySelector(
-      `input[data-row="${rowId}"][data-col="col10_1"]`,
+      `[data-row="${rowId}"][data-col="col10_1"]`,
     );
 
     if (!procedureInput) return;

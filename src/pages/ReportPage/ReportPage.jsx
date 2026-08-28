@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import css from "./ReportPage.module.css";
 import "./PrintReceipt.css";
 function ReportPage() {
   const navigate = useNavigate();
-
+  const bottomRef = useRef(null);
   const [report, setReport] = useState([]);
   const [customServices, setCustomServices] = useState([]);
   const [openServices, setOpenServices] = useState(null);
@@ -19,6 +19,14 @@ function ReportPage() {
   useEffect(() => {
     loadReport();
   }, [month, year]);
+  useEffect(() => {
+    if (!loading && report.length > 0) {
+      bottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [loading, report]);
   useEffect(() => {
     loadCustomServices();
   }, []);
@@ -439,6 +447,10 @@ function ReportPage() {
                 <td colSpan="2"></td>
               </tr>
             )}
+
+            <tr>
+              <td ref={bottomRef} colSpan="7"></td>
+            </tr>
           </tbody>
         </table>
       )}
