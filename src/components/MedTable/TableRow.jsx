@@ -13,12 +13,31 @@ export default function TableRow({
 
   onRowBlur,
 }) {
-  const handleKeyDown = (e, cellKey) => {
-    if (onKeyDownCustom) {
-      onKeyDownCustom(e, row.id, cellKey);
+  const handleKeyDown = (e, rowIdOrCellKey, maybeCellKey) => {
+    if (!onKeyDownCustom) return;
+
+    const cellKey = maybeCellKey ?? rowIdOrCellKey;
+
+    onKeyDownCustom(e, row.id, cellKey);
+  };
+  const openSelect = (rowId, col) => {
+    const select = document.querySelector(
+      `select[data-row="${rowId}"][data-col="${col}"]`,
+    );
+
+    if (!select) return;
+
+    select.focus();
+
+    // Відкриваємо список
+    if (typeof select.showPicker === "function") {
+      try {
+        select.showPicker();
+      } catch (err) {
+        // браузер може заборонити програмне відкриття
+      }
     }
   };
-
   return (
     <tr ref={rowRef} className={css.inputRow}>
       <td className={css.col1}>{rowNumber}</td>
@@ -52,7 +71,17 @@ export default function TableRow({
           value={row.col4 ?? ""}
           onChange={(e) => updateCell(row.id, "col4", e.target.value)}
           // onBlur={() => onRowBlur(row.id)}
-          onKeyDown={(e) => handleKeyDown(e, "col4")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+
+              openSelect(row.id, "col5");
+
+              return;
+            }
+
+            handleKeyDown(e, "col4");
+          }}
           data-row={row.id}
           data-col="col4"
         />
@@ -78,7 +107,17 @@ export default function TableRow({
           value={row.col6 || ""}
           onChange={(e) => updateCell(row.id, "col6", e.target.value)}
           // onBlur={() => onRowBlur(row.id)}
-          onKeyDown={(e) => handleKeyDown(e, "col6")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+
+              openSelect(row.id, "col7");
+
+              return;
+            }
+
+            handleKeyDown(e, "col6");
+          }}
           data-row={row.id}
           data-col="col6"
         />
@@ -90,7 +129,17 @@ export default function TableRow({
           value={row.col7}
           onChange={(e) => updateCell(row.id, "col7", e.target.value)}
           // onBlur={() => onRowBlur(row.id)}
-          onKeyDown={(e) => handleKeyDown(e, "col7")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+
+              openSelect(row.id, "col8");
+
+              return;
+            }
+
+            handleKeyDown(e, "col7");
+          }}
           data-row={row.id}
           data-col="col7"
         >
@@ -126,17 +175,13 @@ export default function TableRow({
             className={css.myList}
             value={row.col9_1 || ""}
             readOnly
-            placeholder="Оберіть діагноз"
+            placeholder="-"
             onBlur={() => onRowBlur(row.id)}
             data-row={row.id}
             data-col="col9_1"
             onClick={(e) => openDiagnosisModal(e, row.id, "col9_1")}
             onKeyDown={(e) => {
               handleKeyDown(e, "col9_1");
-              if (e.key === "Delete" || e.key === "Backspace") {
-                e.stopPropagation(); // щоб не видалився рядок
-                updateCell(row.id, "col9_1", "");
-              }
             }}
           />
 
@@ -164,17 +209,13 @@ export default function TableRow({
             className={css.myList}
             value={row.col9_2 || ""}
             readOnly
-            placeholder="Оберіть діагноз"
+            placeholder="-"
             onBlur={() => onRowBlur(row.id)}
             data-row={row.id}
             data-col="col9_2"
             onClick={(e) => openDiagnosisModal(e, row.id, "col9_2")}
             onKeyDown={(e) => {
               handleKeyDown(e, "col9_2");
-              if (e.key === "Delete" || e.key === "Backspace") {
-                e.stopPropagation(); // щоб не видалився рядок
-                updateCell(row.id, "col9_2", "");
-              }
             }}
           />
 
@@ -219,7 +260,7 @@ export default function TableRow({
                   return;
                 }
 
-                handleKeyDown(e, row.id, field);
+                handleKeyDown(e, field);
               }}
             >
               {selectedOption?.label || "—"}
@@ -227,26 +268,6 @@ export default function TableRow({
           </td>
         );
       })}
-      {/*ПРОЦЕДУРИ*/}
-      {/* {[1, 2, 3].map((num) => (
-        <td key={num} className={css[`col10${num}`]}>
-          <select
-            className={css.myList}
-            value={row[`col10_${num}`] || ""}
-            onChange={(e) => updateCell(row.id, `col10_${num}`, e.target.value)}
-            onBlur={() => onRowBlur(row.id)}
-            onKeyDown={(e) => handleKeyDown(e, `col10_${num}`)}
-            data-row={row.id}
-            data-col={`col10_${num}`}
-          >
-            {procedureOptions.map((opt, i) => (
-              <option key={i} value={opt.value} disabled={opt.disabled}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </td>
-      ))} */}
 
       <td className={css.col11}>
         <select
