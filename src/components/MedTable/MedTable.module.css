@@ -442,3 +442,75 @@ tbody td[contenteditable="true"]:focus {
   background: #fff;
   color: #000;
 }
+.toothGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  margin-top: 15px;
+}
+
+.toothButton {
+  height: 38px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.toothButton:hover {
+  background: #f0f0f0;
+}
+
+.selectedTooth {
+  background: #123b63;
+  color: white;
+  border-color: #123b63;
+}
+
+.selectedProcedureTitle {
+  padding: 10px;
+  margin-bottom: 15px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.selectedProcedureTitle strong {
+  margin-left: 8px;
+}
+
+.toothTitle {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.toothActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.toothActions button {
+  padding: 8px 18px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.procedureTooth {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.selectedProcedureTitle {
+  color: #222 !important;
+  background: #f5f7fa;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.selectedProcedureTitle strong {
+  color: #123b63 !important;
+  margin-left: 6px;
+  font-weight: 700;
+}

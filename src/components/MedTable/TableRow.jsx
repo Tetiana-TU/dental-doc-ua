@@ -236,10 +236,16 @@ export default function TableRow({
       {/* ПРОЦЕДУРИ */}
       {[1, 2, 3].map((num) => {
         const field = `col10_${num}`;
+        const toothField = `${field}_tooth`;
 
-        const selectedOption = procedureOptions.find(
-          (opt) => opt.value === row[field],
-        );
+        const selectedOption =
+          row[field] === "" || row[field] == null
+            ? null
+            : procedureOptions.find(
+                (opt) => !opt.disabled && opt.value === row[field],
+              );
+
+        const tooth = row[toothField];
 
         return (
           <td key={num} className={css[`col10${num}`]}>
@@ -252,23 +258,36 @@ export default function TableRow({
                 openProcedureModal(e, row.id, field);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === "Enter") {
                   e.preventDefault();
                   e.stopPropagation();
 
                   openProcedureModal(e, row.id, field);
+
                   return;
                 }
 
                 handleKeyDown(e, field);
               }}
             >
-              {selectedOption?.label || "—"}
+              {selectedOption ? (
+                <>
+                  <span>{selectedOption.label}</span>
+
+                  {tooth && (
+                    <span className={css.procedureTooth}>
+                      {" · "}
+                      {tooth}
+                    </span>
+                  )}
+                </>
+              ) : (
+                "—"
+              )}
             </div>
           </td>
         );
       })}
-
       <td className={css.col11}>
         <select
           className={css.myList}

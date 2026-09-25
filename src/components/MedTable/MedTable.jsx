@@ -307,6 +307,17 @@ function ProcedureTree({
         e.preventDefault();
         e.stopPropagation();
 
+        // -1 = рисочка
+        if (activeIndex === -1) {
+          const dashOption = flatNodes[0];
+
+          if (dashOption) {
+            onSelect(dashOption);
+          }
+
+          return;
+        }
+
         const option = flatNodes[activeIndex];
 
         if (!option) return;
@@ -422,7 +433,7 @@ function findPathToCode(data, targetCode, path = []) {
 }
 
 const procedureOptions = [
-  { value: "", label: "—" },
+  { value: "-", label: "—" },
 
   {
     value: "",
@@ -561,15 +572,23 @@ function createEmptyRow({ day, month, year, patientId, isNew = false }) {
     col9_2: "",
     col9_2_tooth: "",
     col10_1: "",
+    col10_1_tooth: "",
+
     col10_2: "",
+    col10_2_tooth: "",
+
     col10_3: "",
+    col10_3_tooth: "",
     col11: "0",
     col12: "0",
     col13: "0",
     col14: 0,
   };
 }
-
+const toothOptions = [
+  11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33,
+  34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48,
+];
 export default function MedTable() {
   const now = new Date();
   const today =
@@ -607,6 +626,8 @@ export default function MedTable() {
     code: null,
   });
   const [treeActiveIndex, setTreeActiveIndex] = useState(0);
+  const [selectedProcedureTooth, setSelectedProcedureTooth] = useState("");
+  const [pendingProcedure, setPendingProcedure] = useState(null);
   const treeRef = useRef(null);
   const modalRef = useRef(null);
   useEffect(() => {
@@ -654,6 +675,8 @@ export default function MedTable() {
           rowId: null,
           field: null,
         });
+        setPendingProcedure(null);
+        setSelectedProcedureTooth("");
       }
     };
 
@@ -722,6 +745,34 @@ export default function MedTable() {
           : r.procedures
             ? JSON.parse(r.procedures)
             : [];
+        const getProcedure = (procedure) => {
+          if (!procedure) {
+            return {
+              code: "",
+              tooth: "",
+            };
+          }
+
+          // Нова структура:
+          // { code: "PlLC", tooth: 36 }
+          if (typeof procedure === "object") {
+            return {
+              code: procedure.code || "",
+              tooth: procedure.tooth || "",
+            };
+          }
+
+          // Стара структура:
+          // "PlLC"
+          return {
+            code: procedure,
+            tooth: "",
+          };
+        };
+
+        const p1 = getProcedure(proc[0]);
+        const p2 = getProcedure(proc[1]);
+        const p3 = getProcedure(proc[2]);
 
         return {
           id: r.id ?? r._id ?? crypto.randomUUID(),
@@ -739,9 +790,14 @@ export default function MedTable() {
           col9_2: r.diagnosis_2 || "",
           col9_1_tooth: r.diagnosis_1_tooth || "",
           col9_2_tooth: r.diagnosis_2_tooth || "",
-          col10_1: proc[0] || "",
-          col10_2: proc[1] || "",
-          col10_3: proc[2] || "",
+          col10_1: p1.code,
+          col10_1_tooth: p1.tooth,
+
+          col10_2: p2.code,
+          col10_2_tooth: p2.tooth,
+
+          col10_3: p3.code,
+          col10_3_tooth: p3.tooth,
 
           col11: r.anesthesia ?? "0",
           col12: String(r.sanation ?? 0),
@@ -749,6 +805,7 @@ export default function MedTable() {
           col14: r.uop || 0,
         };
       });
+
       console.table(
         normalized.map((r) => ({
           id: r.id,
@@ -846,9 +903,20 @@ export default function MedTable() {
         diagnosis_1_tooth: toIntOrNull(row.col9_1_tooth),
         diagnosis_2: row.col9_2,
         diagnosis_2_tooth: toIntOrNull(row.col9_2_tooth),
-        procedures: [row.col10_1, row.col10_2, row.col10_3]
-          .map((p) => (typeof p === "object" ? p?.value : p))
-          .filter(Boolean),
+        procedures: [
+          {
+            code: row.col10_1,
+            tooth: toIntOrNull(row.col10_1_tooth),
+          },
+          {
+            code: row.col10_2,
+            tooth: toIntOrNull(row.col10_2_tooth),
+          },
+          {
+            code: row.col10_3,
+            tooth: toIntOrNull(row.col10_3_tooth),
+          },
+        ].filter((p) => p.code && p.code !== "—" && p.code !== "-"),
         anesthesia: row.col11,
         sanation: row.col12,
         sanation_plan: row.col13,
@@ -1211,7 +1279,7 @@ export default function MedTable() {
     const rect = event.currentTarget.getBoundingClientRect();
     const currentRow = rows.find((r) => String(r.id) === String(rowId));
 
-    const currentValue = currentRow?.[field];
+    const currentValue = currentRow?.[field] || "";
 
     let open = {};
 
@@ -1242,20 +1310,24 @@ export default function MedTable() {
       treeRef.current?.focus();
     }, 100);
   };
-  const openProcedureModal = (event, rowId, field) => {
+  const openProcedureModal = (e, rowId, field) => {
     const currentRow = rows.find((r) => String(r.id) === String(rowId));
 
-    const currentValue = currentRow?.[field];
+    if (!currentRow) return;
 
-    const currentIndex = procedureOptions.findIndex(
-      (opt) => !opt.disabled && opt.value === currentValue,
-    );
+    const currentValue = currentRow?.[field] || "";
 
-    setProcedureActiveIndex(
-      procedureOptions
-        .filter((opt) => !opt.disabled)
-        .findIndex((opt) => opt.value === currentValue),
-    );
+    // Зуб, який вже був вибраний для цієї процедури
+    const currentTooth = currentRow?.[`${field}_tooth`] || "";
+
+    setSelectedProcedureTooth(currentTooth);
+
+    const activeIndex = procedureOptions
+      .filter((opt) => !opt.disabled)
+      .findIndex((opt) => opt.value === currentValue);
+
+    setProcedureActiveIndex(activeIndex);
+
     setProcedureModal({
       open: true,
       rowId,
@@ -1263,6 +1335,7 @@ export default function MedTable() {
     });
   };
   const procedureFields = ["col10_1", "col10_2", "col10_3"];
+
   const goToNextProcedure = (rowId, currentField) => {
     const currentIndex = procedureFields.indexOf(currentField);
 
@@ -1317,6 +1390,8 @@ export default function MedTable() {
       rowId: null,
       field: null,
     });
+    setPendingProcedure(null);
+    setSelectedProcedureTooth("");
   };
 
   const selectProcedure = (option) => {
@@ -1324,20 +1399,115 @@ export default function MedTable() {
 
     const { rowId, field } = procedureModal;
 
-    // Якщо вибрано "—", зберігаємо порожнє значення
-    updateCell(rowId, field, option.value || "");
+    if (!rowId || !field) return;
 
+    const currentRow = rows.find((r) => String(r.id) === String(rowId));
+
+    if (!currentRow) return;
+
+    const procedureValue = option.value || "";
+
+    // Якщо вибрали "—"
+    if (procedureValue === "—" || procedureValue === "-") {
+      const updatedRow = {
+        ...currentRow,
+        [field]: "",
+        [`${field}_tooth`]: "",
+      };
+
+      const proceduresSum = ["col10_1", "col10_2", "col10_3"].reduce(
+        (acc, key) => acc + (procedurePoints[updatedRow[key]] || 0),
+        0,
+      );
+
+      updatedRow.col14 =
+        proceduresSum + (anesthesiaPoints[updatedRow.col11] || 0);
+
+      setRows((prev) =>
+        prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
+      );
+
+      setProcedureModal({
+        open: false,
+        rowId: null,
+        field: null,
+      });
+
+      setPendingProcedure(null);
+      setSelectedProcedureTooth("");
+
+      saveRow(updatedRow).catch(console.error);
+
+      return;
+    }
+
+    // Запам'ятовуємо процедуру
+    setPendingProcedure(option);
+
+    // Якщо у цієї процедури вже був зуб —
+    // одразу показуємо його вибраним
+    const currentTooth = currentRow[`${field}_tooth`] || "";
+
+    setSelectedProcedureTooth(currentTooth);
+  };
+  const selectProcedureTooth = async (tooth) => {
+    if (!pendingProcedure) return;
+
+    const { rowId, field } = procedureModal;
+
+    if (!rowId || !field) return;
+
+    const currentRow = rows.find((r) => String(r.id) === String(rowId));
+
+    if (!currentRow) return;
+
+    const updatedRow = {
+      ...currentRow,
+
+      [field]: pendingProcedure.value,
+      [`${field}_tooth`]: Number(tooth),
+    };
+
+    // Перерахунок УОП
+    const proceduresSum = ["col10_1", "col10_2", "col10_3"].reduce(
+      (acc, key) => acc + (procedurePoints[updatedRow[key]] || 0),
+      0,
+    );
+
+    const anesthesiaSum = anesthesiaPoints[updatedRow.col11] || 0;
+
+    updatedRow.col14 = proceduresSum + anesthesiaSum;
+
+    // ОНОВЛЮЄМО ТАБЛИЦЮ ОДРАЗУ
+    setRows((prev) =>
+      prev.map((r) => (String(r.id) === String(rowId) ? updatedRow : r)),
+    );
+
+    // Закриваємо модалку
     setProcedureModal({
       open: false,
       rowId: null,
       field: null,
     });
 
-    // Переходимо до наступного поля
+    setPendingProcedure(null);
+    setSelectedProcedureTooth("");
+
+    // Зберігаємо в БД
+    try {
+      await saveRow(updatedRow);
+    } catch (err) {
+      console.error("Помилка збереження процедури:", err);
+    }
+
+    // Повертаємо фокус у клітинку
     requestAnimationFrame(() => {
-      goToNextProcedure(rowId, field);
+      document
+        .querySelector(`[data-row="${rowId}"][data-col="${field}"]`)
+        ?.focus();
     });
   };
+
   const grouped = rows.reduce((acc, row) => {
     if (!row.colDate) return acc;
 
@@ -1365,6 +1535,102 @@ export default function MedTable() {
     if (e.key === "Enter") {
       console.log("TABLE", cellKey);
       e.preventDefault();
+
+      // =========================================
+      // ПРОЦЕДУРИ
+      // =========================================
+      if (["col10_1", "col10_2", "col10_3"].includes(cellKey)) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const procedureFields = ["col10_1", "col10_2", "col10_3"];
+
+        const row = rows.find((r) => String(r.id) === String(rowId));
+
+        if (!row) return;
+
+        const currentIndex = procedureFields.indexOf(cellKey);
+
+        if (currentIndex === -1) return;
+
+        // -----------------------------------------
+        // Якщо поточна процедура ще НЕ вибрана
+        // → відкриваємо її
+        // -----------------------------------------
+
+        if (!row[cellKey]) {
+          const currentCell = document.querySelector(
+            `[data-row="${rowId}"][data-col="${cellKey}"]`,
+          );
+
+          if (!currentCell) return;
+
+          openProcedureModal(
+            {
+              currentTarget: currentCell,
+            },
+            rowId,
+            cellKey,
+          );
+
+          return;
+        }
+
+        // -----------------------------------------
+        // Поточна процедура вже вибрана
+        // → переходимо до наступної
+        // -----------------------------------------
+
+        if (currentIndex < procedureFields.length - 1) {
+          const nextField = procedureFields[currentIndex + 1];
+
+          const nextCell = document.querySelector(
+            `[data-row="${rowId}"][data-col="${nextField}"]`,
+          );
+
+          if (!nextCell) return;
+
+          nextCell.focus();
+
+          // Відкриваємо наступну процедуру
+          requestAnimationFrame(() => {
+            openProcedureModal(
+              {
+                currentTarget: nextCell,
+              },
+              rowId,
+              nextField,
+            );
+          });
+
+          return;
+        }
+
+        // -----------------------------------------
+        // Після Процедури 3 → знеболювання
+        // -----------------------------------------
+
+        const anesthesiaInput = document.querySelector(
+          `select[data-row="${rowId}"][data-col="col11"]`,
+        );
+
+        if (!anesthesiaInput) return;
+
+        anesthesiaInput.focus();
+
+        requestAnimationFrame(() => {
+          if (typeof anesthesiaInput.showPicker === "function") {
+            try {
+              anesthesiaInput.showPicker();
+            } catch (err) {
+              // браузер може заборонити програмне відкриття
+            }
+          }
+        });
+
+        return;
+      }
+
       if (cellKey === "col12") {
         e.preventDefault();
         e.stopPropagation();
@@ -1583,38 +1849,163 @@ export default function MedTable() {
 
     const target = e.target;
 
-    if (!(target instanceof HTMLInputElement)) return;
+    // Беремо data-col без прив'язки до типу елемента
+    const cellKey = target?.dataset?.col;
+    const rowId = target?.dataset?.row;
 
-    if (target.dataset.col !== "col9_2_tooth") return;
+    if (!cellKey || !rowId) return;
 
-    const rowId = target.dataset.row;
+    // =========================================
+    // ПРОЦЕДУРИ 1 / 2 / 3
+    // =========================================
 
-    if (!rowId) return;
+    if (["col10_1", "col10_2", "col10_3"].includes(cellKey)) {
+      e.preventDefault();
+      e.stopPropagation();
 
-    e.preventDefault();
-    e.stopPropagation();
+      console.log("ENTER PROCEDURE:", cellKey, "row:", rowId);
 
-    const procedureInput = document.querySelector(
-      `[data-row="${rowId}"][data-col="col10_1"]`,
-    );
+      const procedureFields = ["col10_1", "col10_2", "col10_3"];
 
-    if (!procedureInput) return;
+      const row = rows.find((r) => String(r.id) === String(rowId));
 
-    procedureInput.focus();
+      if (!row) {
+        console.log("ROW NOT FOUND:", rowId);
+        return;
+      }
 
-    requestAnimationFrame(() => {
-      openProcedureModal(
-        {
-          currentTarget: procedureInput,
-        },
-        rowId,
-        "col10_1",
+      const currentIndex = procedureFields.indexOf(cellKey);
+
+      console.log(
+        "CURRENT VALUE:",
+        row[cellKey],
+        "CURRENT INDEX:",
+        currentIndex,
       );
 
+      // -----------------------------------------
+      // Якщо процедура порожня
+      // → відкриваємо саме її
+      // -----------------------------------------
+
+      if (!row[cellKey] || row[cellKey] === "") {
+        const procedureInput = document.querySelector(
+          `[data-row="${rowId}"][data-col="${cellKey}"]`,
+        );
+
+        console.log("OPEN CURRENT PROCEDURE:", cellKey, procedureInput);
+
+        if (!procedureInput) return;
+
+        procedureInput.focus();
+
+        openProcedureModal(
+          {
+            currentTarget: procedureInput,
+          },
+          rowId,
+          cellKey,
+        );
+
+        return;
+      }
+
+      // -----------------------------------------
+      // Якщо процедура вже вибрана
+      // → переходимо до наступної
+      // -----------------------------------------
+
+      if (currentIndex < procedureFields.length - 1) {
+        const nextField = procedureFields[currentIndex + 1];
+
+        const nextInput = document.querySelector(
+          `[data-row="${rowId}"][data-col="${nextField}"]`,
+        );
+
+        console.log("GO TO NEXT PROCEDURE:", nextField, nextInput);
+
+        if (!nextInput) {
+          console.log("NEXT PROCEDURE NOT FOUND:", nextField);
+          return;
+        }
+
+        nextInput.focus();
+
+        requestAnimationFrame(() => {
+          openProcedureModal(
+            {
+              currentTarget: nextInput,
+            },
+            rowId,
+            nextField,
+          );
+        });
+
+        return;
+      }
+
+      // -----------------------------------------
+      // Після Процедури 3 → ЗНЕБОЛЮВАННЯ
+      // -----------------------------------------
+
+      const anesthesiaInput = document.querySelector(
+        `select[data-row="${rowId}"][data-col="col11"]`,
+      );
+
+      console.log("GO TO ANESTHESIA:", anesthesiaInput);
+
+      if (!anesthesiaInput) return;
+
+      anesthesiaInput.focus();
+
       requestAnimationFrame(() => {
-        procedureTreeRef.current?.focus();
+        if (typeof anesthesiaInput.showPicker === "function") {
+          try {
+            anesthesiaInput.showPicker();
+          } catch (err) {
+            console.log("showPicker blocked", err);
+          }
+        }
       });
-    });
+
+      return;
+    }
+
+    // =========================================
+    // Після номера зуба 2 → Процедура 1
+    // =========================================
+
+    if (cellKey === "col9_2_tooth") {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const procedureInput = document.querySelector(
+        `[data-row="${rowId}"][data-col="col10_1"]`,
+      );
+
+      if (!procedureInput) {
+        console.log("Не знайдено col10_1");
+        return;
+      }
+
+      procedureInput.focus();
+
+      requestAnimationFrame(() => {
+        openProcedureModal(
+          {
+            currentTarget: procedureInput,
+          },
+          rowId,
+          "col10_1",
+        );
+
+        requestAnimationFrame(() => {
+          procedureTreeRef.current?.focus();
+        });
+      });
+
+      return;
+    }
   };
   return (
     <>
@@ -1845,18 +2236,65 @@ export default function MedTable() {
               </div>
 
               <div className={css.procedureModalContent}>
-                <ProcedureTree
-                  data={procedureOptions}
-                  onSelect={selectProcedure}
-                  selectedValue={
-                    rows.find(
-                      (r) => String(r.id) === String(procedureModal.rowId),
-                    )?.[procedureModal.field]
-                  }
-                  activeIndex={procedureActiveIndex}
-                  setActiveIndex={setProcedureActiveIndex}
-                  treeRef={procedureTreeRef}
-                />
+                {!pendingProcedure ? (
+                  <>
+                    <ProcedureTree
+                      data={procedureOptions}
+                      onSelect={selectProcedure}
+                      selectedValue={
+                        rows.find(
+                          (r) => String(r.id) === String(procedureModal.rowId),
+                        )?.[procedureModal.field]
+                      }
+                      activeIndex={procedureActiveIndex}
+                      setActiveIndex={setProcedureActiveIndex}
+                      treeRef={procedureTreeRef}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className={css.selectedProcedureTitle}>
+                      Процедура:
+                      <strong>
+                        {pendingProcedure.label || pendingProcedure.value}
+                      </strong>
+                    </div>
+
+                    <div className={css.toothTitle}>Виберіть зуб</div>
+
+                    <div className={css.toothGrid}>
+                      {toothOptions.map((tooth) => (
+                        <button
+                          key={tooth}
+                          type="button"
+                          className={`${css.toothButton} ${
+                            String(selectedProcedureTooth) === String(tooth)
+                              ? css.selectedTooth
+                              : ""
+                          }`}
+                          onClick={() => {
+                            setSelectedProcedureTooth(tooth);
+                            selectProcedureTooth(tooth);
+                          }}
+                        >
+                          {tooth}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className={css.toothActions}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPendingProcedure(null);
+                          setSelectedProcedureTooth("");
+                        }}
+                      >
+                        ← Назад
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

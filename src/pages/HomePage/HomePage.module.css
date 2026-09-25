@@ -111,3 +111,56 @@ body {
 .card p {
   font-size: 1rem; /* 24px */
 }
+/* Повідомлення для неавторизованого користувача */
+
+.authMessage {
+  text-align: center;
+  padding: 10px 20px 20px;
+}
+
+.authMessage h2 {
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.authMessage p {
+  margin: 0 auto 25px;
+  max-width: 420px;
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+.authMessageButtons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.authMessageButtons button {
+  padding: 11px 22px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.registerButton {
+  background: #4caf50;
+  color: white;
+}
+
+.registerButton:hover {
+  background: #43a047;
+}
+
+.loginButton {
+  background: #555;
+  color: white;
+}
+
+.loginButton:hover {
+  background: #444;
+}

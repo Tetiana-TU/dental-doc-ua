@@ -98,38 +98,6 @@ router.post("/:patientId/services", authMiddleware, async (req, res) => {
 });
 
 // ========================================
-// Видалити додаткову послугу пацієнта
-// ========================================
-
-router.delete("/services/:id", authMiddleware, async (req, res) => {
-  try {
-    const doctorId = req.doctor.id;
-    const id = Number(req.params.id);
-
-    const result = await pool.query(
-      `
-      DELETE FROM patient_services
-      WHERE id = $1
-        AND doctor_id = $2
-      RETURNING *
-      `,
-      [id, doctorId],
-    );
-
-    res.json({
-      ok: true,
-      deleted: result.rows[0] || null,
-    });
-  } catch (err) {
-    console.error("DELETE PATIENT SERVICE ERROR:", err);
-
-    res.status(500).json({
-      message: "DB error",
-      error: err.message,
-    });
-  }
-});
-// ========================================
 // ЗВІТ ПО ПАЦІЄНТАХ
 // ========================================
 
